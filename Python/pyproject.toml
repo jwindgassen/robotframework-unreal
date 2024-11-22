@@ -1,0 +1,53 @@
+[project]
+name = "robotframework-unreal"
+description = "Robot Framework library for testing Unreal Engine Applications."
+readme = "../Readme.md"
+requires-python = ">= 3.10"
+license = "MIT"
+authors = [
+    { name = "Jonathan Windgassen", email = "j.windgassen@fz-juelich.de" },
+]
+dependencies = [
+    "robotframework",
+    "requests",
+]
+dynamic = ["version"]
+
+[project.urls]
+Repository = "https://github.com/jwindgassen/unreal-robot-integration"
+Issues = "https://github.com/jwindgassen/unreal-robot-integration/issues"
+
+[project.optional-dependencies]
+dev = [
+    "robotframework-debuglibrary",
+    "robotframework-tidy"
+]
+
+# Build
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch]
+packages = ["UnrealLibrary"]
+
+[tool.hatch.build]
+include = ["UnrealLibrary/**/*.py"]
+
+# Dynamic Version
+[tool.hatch.version]
+path = "../RobotIntegration.uplugin"
+pattern = "\"VersionName\": \"(?P<version>.*)\""
+
+[tool.hatch.build.hooks.version]
+path = "UnrealLibrary/_version.py"
+
+# Lint & Format
+[tool.ruff.lint]
+select = ["D"]
+ignore = ["N99", "TID252", "D10"]
+pydocstyle.convention = "pep257"
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

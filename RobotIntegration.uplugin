@@ -1,0 +1,29 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1.0",
+	"FriendlyName": "RobotIntegration",
+	"Description": "Coupling Unreal Engine and RobotFramework for Acceptance Testing in Unreal",
+	"Category": "Other",
+	"CreatedBy": "Jonathan Windgassen",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": false,
+	"IsBetaVersion": true,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "RobotIntegration",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "RobotKeywords",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}

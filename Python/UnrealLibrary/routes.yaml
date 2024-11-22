@@ -1,0 +1,81 @@
+openapi: 3.1.0
+info:
+  title: robotframework-unreal API
+  description: robotframework-unreal
+  version: 0.1.0
+
+servers:
+  - url: http://localhost:9876/
+    description: Default URL where the Unreal Application is listening
+
+paths:
+  /keywords/names:
+    get:
+      summary: Get the names of all available Keywords.
+      description: |
+        Get the names of all keywords available for tests on this application.
+        This contains all builtin keywords in this library, as well as custom keywords
+        defined by the developer of the application.
+
+      responses:
+        200:
+          description: An Array of all available names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
+  /keywords/arguments:
+    get:
+      summary: Get the arguments of a keyword
+      description: |
+        Get the required arguments, as well as possible default values and 
+        positional requirements, for a given keyword
+      
+      parameters:
+        - $ref: "#/components/parameters/keyword"
+
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+
+  /keywords/types:
+    get:
+      summary: Get the types for the arguments of a keyword
+      description: |
+        Get the types each argument should have.
+
+      parameters:
+        - $ref: "#/components/parameters/keyword"
+
+      responses:
+        200:
+          description: ""
+          content:
+            application/json:
+              schema:
+                type: object
+
+
+components:
+  parameters:
+    keyword:
+      name: keyword
+      in: query
+      required: true
+      description: The keyword for which to get the attributes.
+      schema:
+        type: string
+
+  responses:
+    200:
+      description: ""
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: string
+
