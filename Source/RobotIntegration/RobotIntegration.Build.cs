@@ -12,13 +12,15 @@ public class RobotIntegration : ModuleRules {
 		}
 
 		PublicDependencyModuleNames.AddRange(new []{
-			"Core", "RobotKeywords"
+			"Core",
+			"HttpServer",
+			"XmlParser",
+			"RobotKeywords"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new []{
 			"CoreUObject",
 			"Engine",
-			"XmlRpc"
 		});
 	}
 }

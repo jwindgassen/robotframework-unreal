@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "Server.h"
+#include "XmlRpcServer.h"
 
 
 class FRobotIntegrationModule final : public IModuleInterface {

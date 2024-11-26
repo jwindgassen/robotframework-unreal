@@ -1,31 +1,47 @@
-﻿#include "Server.h"
+﻿#include "XmlRpcServer.h"
 #include "HttpServerModule.h"
 #include "XmlFile.h"
-#include "Runtime/Online/HTTPServer/Public/IHttpRouter.h"
+#include "IHttpRouter.h"
 
 
 DEFINE_LOG_CATEGORY(LogXmlRpcServer)
 
 
-FXmlRpcServer::FXmlRpcServer(const int32 Port, const FString& Path) {
+bool FXmlRpcServer::Start(const FString& Path, const int32 Port) {
+    UE_LOG(LogXmlRpcServer, Log, TEXT("Starting XmlRpcServer"))
+    
+    if (RouteHandle) {
+        UE_LOG(LogXmlRpcServer, Warning, TEXT("XmlRpcServer already running"))
+        return true;
+    }
+    
     FHttpServerModule& HttpServerModule = FHttpServerModule::Get();
 
     Router = HttpServerModule.GetHttpRouter(Port);
+    if (!Router) {
+        UE_LOG(LogXmlRpcServer, Error, TEXT("Could not create HTTP Router on Port %d"), Port)
+        return false;
+    }
+    
     RouteHandle = Router->BindRoute(
         Path, EHttpServerRequestVerbs::VERB_POST,
         [this](const FHttpServerRequest& Request, const FHttpResultCallback& OnComplete) -> bool {
             return this->ProcessHttpRequest(Request, OnComplete);
         }
     );
+    UE_LOG(LogXmlRpcServer, Log, TEXT("XmlRpc Route: %s"), *RouteHandle->Path)
 
     HttpServerModule.StartAllListeners();
+    return true;
 }
 
-FXmlRpcServer::~FXmlRpcServer() {
-    Stop();
+void FXmlRpcServer::RegisterProcedure(FString Name, FRemoteProcedure Procedure) {
+    Procedures.Emplace(Name, Procedure);
 }
 
 void FXmlRpcServer::Stop() const {
+    UE_LOG(LogXmlRpcServer, Log, TEXT("Stopping XmlRpcServer"))
+    
     if (RouteHandle.IsValid()) {
         Router->UnbindRoute(RouteHandle);
     }
@@ -33,7 +49,9 @@ void FXmlRpcServer::Stop() const {
 
 bool FXmlRpcServer::ProcessHttpRequest(const FHttpServerRequest& Request, const FHttpResultCallback& OnComplete) {
     // Convert body to text
-    const FString XmlText = BytesToString(Request.Body.GetData(), Request.Body.Num());
+    TArray RequestBody{Request.Body, 1};
+    RequestBody.Add(0);  // Add Null-Terminator
+    const FString XmlText = UTF8_TO_TCHAR(RequestBody.GetData());
     UE_LOG(LogXmlRpcServer, Verbose, TEXT("Received XML-RPC: '%s'"), *XmlText)
 
     // Parse XML from body
@@ -45,13 +63,13 @@ bool FXmlRpcServer::ProcessHttpRequest(const FHttpServerRequest& Request, const 
         return false;
     }
 
-    const FXmlNode* MethodCall = XmlFile.GetRootNode()->FindChildNode("methodCall");
-    const FString ProcedureName = MethodCall->FindChildNode("methodName")->GetContent();
-    const FRemoteProcedure* Procedure = Procedures.Find(ProcedureName);
-
+    const FString ProcedureName = XmlFile.GetRootNode()->FindChildNode("methodName")->GetContent();
+    UE_LOG(LogXmlRpcServer, Log, TEXT("Trying to find remote procedure '%s'"), *ProcedureName)
+    
     FRpcMethodResponse Result;
+    const FRemoteProcedure* Procedure = Procedures.Find(ProcedureName);
     if (Procedure) {
-        const TArray<TSharedPtr<FRpcValue>> Arguments = ParseArguments(MethodCall->FindChildNode("params"));
+        const TArray<TSharedPtr<FRpcValue>> Arguments = ParseArguments(XmlFile.GetRootNode()->FindChildNode("params"));
         Result = (*Procedure)(Arguments);
     } else {
         UE_LOG(LogXmlRpcServer, Error, TEXT("Unknown Procedure: '%s'"), *ProcedureName)
@@ -60,12 +78,17 @@ bool FXmlRpcServer::ProcessHttpRequest(const FHttpServerRequest& Request, const 
 
     const FString ResponseXml = BuildXmlResponse(Result);
     UE_LOG(LogXmlRpcServer, Verbose, TEXT("Response XML: '%s'"), *ResponseXml)
-    
+
+    UE_LOG(LogXmlRpcServer, Log, TEXT("Finishing XmlRpc Request"))
     OnComplete(FHttpServerResponse::Create(ResponseXml, "text/xml"));
     return true;
 }
 
 TArray<TSharedPtr<FRpcValue>> FXmlRpcServer::ParseArguments(const FXmlNode* Params) {
+    if (!Params) {
+        return {};
+    }
+    
     TArray<TSharedPtr<FRpcValue>> Arguments;
     for (const FXmlNode* Param : Params->GetChildrenNodes()) {
         const FXmlNode* Value = Param->GetFirstChildNode();
@@ -141,8 +164,8 @@ void FXmlRpcServer::BuildValueNode(FStringBuilderBase& Builder, const TSharedPtr
     switch (Value->index()) {
         case 0: Builder.Appendf(TEXT("<i4>%d</i4>"), std::get<int32>(*Value)); break;
         case 1: Builder.Appendf(TEXT("<bool>%s</bool>"), std::get<bool>(*Value) ? TEXT("1") : TEXT("0")); break;
-        case 2: Builder.Appendf(TEXT("<string>%f</string>"), *std::get<FString>(*Value)); break;
-        case 3: Builder.Appendf(TEXT("<double>%s</double>"), std::get<double>(*Value)); break;
+        case 2: Builder.Appendf(TEXT("<string>%s</string>"), *std::get<FString>(*Value)); break;
+        case 3: Builder.Appendf(TEXT("<double>%f</double>"), std::get<double>(*Value)); break;
         case 4: {
             Builder.Appendf(TEXT("<dateTime.iso8601>%s</dateTime.iso8601>"), *std::get<FDateTime>(*Value).ToIso8601());
             break;

@@ -1,5 +1,7 @@
 #include "RobotIntegration.h"
-#include "Server.h"
+
+#include "KeywordManager.h"
+#include "XmlRpcServer.h"
 
 
 IMPLEMENT_MODULE(FRobotIntegrationModule, RobotIntegration)
@@ -13,7 +15,17 @@ void FRobotIntegrationModule::StartupModule() {
     // }
     // UE_LOG(LogTemp, Log, TEXT("Starting listening for HTTP Requests on %d"), Port)
     
-    Server = FXmlRpcServer{};
+    Server.Start();
+
+    Server.RegisterProcedure("get_keyword_names", [](const TArray<TSharedPtr<FRpcValue>>&) -> FRpcMethodResponse {
+        const TArray<FString> Keywords = FKeywordManager::Get().KeywordNames();
+
+        TArray<TSharedPtr<FRpcValue>> Response;
+        for (const FString& Name : Keywords) {
+            Response.Add(MakeShared<FRpcValue>(Name));
+        }
+        return MakeShared<FRpcValue>(Response);
+    });
 }
 
 void FRobotIntegrationModule::ShutdownModule() {

@@ -24,11 +24,6 @@
 			"Name": "RobotKeywords",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
-		},
-		{
-			"Name": "XmlRpc",
-			"Type": "Runtime",
-			"LoadingPhase": "Default"
 		}
 	]
 }

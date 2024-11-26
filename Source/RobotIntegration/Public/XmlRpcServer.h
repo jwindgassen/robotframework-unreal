@@ -3,7 +3,7 @@
 #include <variant>
 #include "CoreMinimal.h"
 #include "HttpRouteHandle.h"
-#include "Server.generated.h"
+#include "XmlRpcServer.generated.h"
 
 
 DECLARE_LOG_CATEGORY_EXTERN(LogXmlRpcServer, Log, Log)
@@ -15,7 +15,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogXmlRpcServer, Log, Log)
  * Represents any valid value an RPC parameter / return type can have.
  * Unfortunately we can't use TVariant, as it is final, and we need to inherit because we need recursive types in it
  */
-struct XMLRPC_API FRpcValue :
+struct ROBOTINTEGRATION_API FRpcValue :
     std::variant<
         int32, bool, FString, double,        /* Simple scalar types */
         FDateTime, TArray<uint8>,            /* DateTime and Base64 binary data */
@@ -30,7 +30,7 @@ struct XMLRPC_API FRpcValue :
     using FBase::index;
 };
 
-struct XMLRPC_API FRpcMethodResponse :
+struct ROBOTINTEGRATION_API FRpcMethodResponse :
     std::variant<
         TSharedPtr<FRpcValue>, /* Success */
         TTuple<int32, FString> /* Fault */
@@ -45,7 +45,7 @@ using FRemoteProcedure = TFunction<FRpcMethodResponse(const TArray<TSharedPtr<FR
 
 
 USTRUCT()
-struct XMLRPC_API FXmlRpcServer {
+struct ROBOTINTEGRATION_API FXmlRpcServer {
     GENERATED_BODY()
 
 private:
@@ -59,9 +59,13 @@ private:
     TMap<FString, FRemoteProcedure> Procedures;
 
 public:
-    explicit FXmlRpcServer(int32 Port = 8270, const FString& Path = "/rpc");
-
-    virtual ~FXmlRpcServer();
+    virtual ~FXmlRpcServer() {
+        Stop();
+    }
+    
+    bool Start(const FString& Path = "/rpc", int32 Port = 8270);
+    
+    void RegisterProcedure(FString Name, FRemoteProcedure Procedure);
 
     void Stop() const;
 

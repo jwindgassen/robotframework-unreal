@@ -10,6 +10,11 @@ FKeywordManager::FKeywordManager() {
     TArray<UClass*> Classes = {};
     GetDerivedClasses(UKeyword::StaticClass(), Classes, true);
 
+    // Remove Abstract Classes
+    Classes = Classes.FilterByPredicate([](const UClass* Class) {
+        return !(Class->ClassFlags & CLASS_Abstract);
+    });
+    
     for (const auto* Class : Classes) {
         UKeyword* Keyword = NewObject<UKeyword>(GetTransientPackage(), Class);
         Keywords.Emplace(Keyword->GetName(), Keyword);
