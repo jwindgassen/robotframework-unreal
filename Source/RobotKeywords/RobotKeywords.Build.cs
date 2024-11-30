@@ -4,7 +4,10 @@ public class RobotKeywords : ModuleRules {
     public RobotKeywords(ReadOnlyTargetRules Target) : base(Target) {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-        PublicDependencyModuleNames.Add("Core");
+        PublicDependencyModuleNames.AddRange(new []{
+            "Core", 
+            "XmlRpc",
+        });
         
         PrivateDependencyModuleNames.AddRange(new []{
             "CoreUObject",

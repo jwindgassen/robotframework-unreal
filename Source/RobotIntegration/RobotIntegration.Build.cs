@@ -13,8 +13,7 @@ public class RobotIntegration : ModuleRules {
 
 		PublicDependencyModuleNames.AddRange(new []{
 			"Core",
-			"HttpServer",
-			"XmlParser",
+			"XmlRpc",
 			"RobotKeywords"
 		});
 
