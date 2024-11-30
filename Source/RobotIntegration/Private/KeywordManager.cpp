@@ -15,9 +15,8 @@ FKeywordManager::FKeywordManager() {
         return !(Class->ClassFlags & CLASS_Abstract);
     });
     
-    for (const auto* Class : Classes) {
-        UKeyword* Keyword = NewObject<UKeyword>(GetTransientPackage(), Class);
-        Keywords.Emplace(Keyword->GetName(), Keyword);
+    for (auto* Class : Classes) {
+        Keywords.Emplace(UKeyword::GetKeywordName(Class), Class);
     }
 }
 
@@ -40,13 +39,16 @@ bool FKeywordManager::HasKeyword(const FString& Name) const {
 }
 
 TArray<FString> FKeywordManager::KeywordArguments(const FString& Keyword) const {
-    return Keywords[Keyword]->GetArguments();
+    check(HasKeyword(Keyword));
+    return UKeyword::GetArguments(Keywords[Keyword]);
 }
 
 TMap<FString, FString> FKeywordManager::KeywordTypes(const FString& Keyword) const {
-    return Keywords[Keyword]->GetArgumentTypes();
+    check(HasKeyword(Keyword));
+    return UKeyword::GetArgumentTypes(Keywords[Keyword]);
 }
 
-void FKeywordManager::Execute(const FString& Keyword, const TArray<FString>& Arguments) const {
-    Keywords[Keyword]->Execute(Arguments);
+void FKeywordManager::Execute(const FString& Keyword, const TArray<TSharedPtr<FRpcValue>>& Arguments) const {
+    check(HasKeyword(Keyword));
+    UKeyword::Run(Keywords[Keyword], Arguments);
 }

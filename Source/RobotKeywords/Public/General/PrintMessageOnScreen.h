@@ -8,20 +8,17 @@ class UPrintMessageOnScreenKeyword : public UKeyword {
     GENERATED_BODY()
     
 public:
-    virtual FString GetName() override {
-        return "Print Message On Screen";
-    }
-
-    virtual TArray<FString> GetArguments() override {
-        return {"text", "duration=10"};
-    }
-
-    virtual TMap<FString, FString> GetArgumentTypes() override {
-        return {
-            {"text", "str"},
-            {"duration", "float"},
-        };
-    }
+    UPROPERTY(meta = (KeywordArgument))
+    FString Message;
     
-    virtual void Execute(const TArray<FString>& Arguments) override;
+    UPROPERTY(meta = (KeywordArgument))
+    double Duration = 10;
+
+    TSharedPtr<FRpcMethodResponse> Execute() override {
+        LogInfo(TEXT("Some Number: %d"), 42);
+
+        GEngine->AddOnScreenDebugMessage(-1, Duration, FColor::Purple, Message);
+
+        return Success();
+    }
 };

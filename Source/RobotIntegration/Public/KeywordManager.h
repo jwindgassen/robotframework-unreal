@@ -4,10 +4,11 @@
 
 
 class UKeyword;
+struct FRpcValue;
 
 
 class ROBOTINTEGRATION_API FKeywordManager {
-    TMap<FString, UKeyword*> Keywords;
+    TMap<FString, TSubclassOf<UKeyword>> Keywords;
     
     static FKeywordManager* Instance;
     
@@ -24,5 +25,5 @@ public:
 
     TMap<FString, FString> KeywordTypes(const FString& Keyword) const;
 
-    void Execute(const FString& Keyword, const TArray<FString>& Arguments) const;
+    void Execute(const FString& Keyword, const TArray<TSharedPtr<FRpcValue>>& Arguments) const;
 };
