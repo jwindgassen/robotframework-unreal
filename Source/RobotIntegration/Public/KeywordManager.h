@@ -23,7 +23,7 @@ public:
     
     TArray<FString> KeywordArguments(const FString& Keyword) const;
 
-    TMap<FString, FString> KeywordTypes(const FString& Keyword) const;
+    TArray<FString> KeywordTypes(const FString& Keyword) const;
 
-    void Execute(const FString& Keyword, const TArray<TSharedPtr<FRpcValue>>& Arguments) const;
+    TSharedPtr<FRpcValue> Execute(const FString& Keyword, const TArray<TSharedPtr<FRpcValue>>& Arguments) const;
 };

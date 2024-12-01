@@ -190,6 +190,9 @@ void FXmlRpcServer::BuildValueNode(FStringBuilderBase& Builder, const TSharedPtr
                 BuildValueNode(Builder, Val);
                 Builder.Append("</member>");
             }
+            Builder.Append("</struct>");
+
+            break;
         }
         default: {
             UE_LOG(LogXmlRpcServer, Error, TEXT("Unknown FRpcValue Index"))

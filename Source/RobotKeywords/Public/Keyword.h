@@ -30,7 +30,7 @@ public:
 
     static TArray<FString> GetArguments(TSubclassOf<UKeyword> KeywordClass);
     
-    static TMap<FString, FString> GetArgumentTypes(TSubclassOf<UKeyword> KeywordClass);
+    static TArray<FString> GetTypes(TSubclassOf<UKeyword> KeywordClass);
     
     static TSharedPtr<FRpcValue> Run(TSubclassOf<UKeyword> KeywordClass, const TArray<TSharedPtr<FRpcValue>>& Arguments);
 

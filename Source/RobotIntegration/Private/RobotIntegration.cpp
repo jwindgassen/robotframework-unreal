@@ -26,6 +26,56 @@ void FRobotIntegrationModule::StartupModule() {
         }
         return MakeShared<FRpcValue>(Response);
     });
+
+    Server.RegisterProcedure(
+        "get_keyword_arguments",
+        [](const TArray<TSharedPtr<FRpcValue>>& Arguments) -> FRpcMethodResponse {
+            checkf(
+                Arguments.Num() == 1 && std::holds_alternative<FString>(*Arguments[0]),
+                TEXT("'get_keywords_arguments' expects exactly 1 String as Argument")
+            )
+            const FString& Keyword = std::get<FString>(*Arguments[0]);
+
+            TArray<TSharedPtr<FRpcValue>> Response;
+            for (const FString& Arg : FKeywordManager::Get().KeywordArguments(Keyword)) {
+                Response.Add(MakeShared<FRpcValue>(Arg));
+            }
+            return MakeShared<FRpcValue>(Response);
+        }
+    );
+
+    Server.RegisterProcedure(
+        "get_keyword_types",
+        [](const TArray<TSharedPtr<FRpcValue>>& Arguments) -> FRpcMethodResponse {
+            checkf(
+                Arguments.Num() == 1 && std::holds_alternative<FString>(*Arguments[0]),
+                TEXT("'get_keyword_types' expects exactly 1 String as Argument")
+            )
+            const FString& Keyword = std::get<FString>(*Arguments[0]);
+
+            TArray<TSharedPtr<FRpcValue>> Response;
+            for (const auto& Type : FKeywordManager::Get().KeywordTypes(Keyword)) {
+                Response.Add(MakeShared<FRpcValue>(Type));
+            }
+            return MakeShared<FRpcValue>(Response);
+        }
+    );
+
+    Server.RegisterProcedure(
+        "run_keyword",
+        [](const TArray<TSharedPtr<FRpcValue>>& Arguments) -> FRpcMethodResponse {
+            checkf(
+                Arguments.Num() >= 1 && std::holds_alternative<FString>(*Arguments[0]),
+                TEXT("'run_keyword' need at least 1 String as Argument")
+            )
+            
+            return FKeywordManager::Get().Execute(
+                std::get<FString>(*Arguments[0]),
+                Arguments.Num() == 2 ? std::get<TArray<TSharedPtr<FRpcValue>>>(*Arguments[1])
+                                     : TArray<TSharedPtr<FRpcValue>>{}
+            );
+        }
+    );
 }
 
 void FRobotIntegrationModule::ShutdownModule() {

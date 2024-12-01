@@ -33,8 +33,8 @@ TArray<FString> UKeyword::GetArguments(TSubclassOf<UKeyword> KeywordClass) {
     return Names;
 }
 
-TMap<FString, FString> UKeyword::GetArgumentTypes(TSubclassOf<UKeyword> KeywordClass) {
-    TMap<FString, FString> Types;
+TArray<FString> UKeyword::GetTypes(TSubclassOf<UKeyword> KeywordClass) {
+    TArray<FString> Types;
 
     static TMap<FString, FString> CppTypesToRobotTypes = {
         {"int32", "int"},
@@ -65,7 +65,7 @@ TMap<FString, FString> UKeyword::GetArgumentTypes(TSubclassOf<UKeyword> KeywordC
             *Type = "bytes";
         }
         
-        Types.Emplace(Iter->GetName(), *Type);
+        Types.Add(*Type);
     }
 
     return Types;
@@ -79,16 +79,14 @@ TSharedPtr<FRpcValue> UKeyword::Run(
 
     // Generate Properties
     int32 ArgumentIndex = 0;
-    FProperty const* Property = KeywordClass->PropertyLink;
-    for (; Property != nullptr; Property = Property->PropertyLinkNext, ++ArgumentIndex) {
-        if (!Property->HasMetaData(TEXT("KeywordArgument"))) {
+    for (TFieldIterator<FProperty> Iter(KeywordClass); Iter; ++Iter, ++ArgumentIndex) {
+        if (!Iter->HasMetaData(TEXT("KeywordArgument"))) {
             continue;
         }
 
-        const bool SetProperty = SetPropertyValue(Arguments[ArgumentIndex], Property, Keyword);
-        if (!SetProperty) {
+        if (!SetPropertyValue(Arguments[ArgumentIndex], *Iter, Iter->ContainerPtrToValuePtr<void>(Keyword))) {
             UE_LOG(
-                LogTemp, Error, TEXT("Could not set property '%s' on '%s'"), *Property->GetName(),
+                LogTemp, Error, TEXT("Could not set property '%s' on '%s'"), *Iter->GetName(),
                 *KeywordClass->GetName()
             )
         }
@@ -222,13 +220,11 @@ bool UKeyword::SetPropertyValue(const TSharedPtr<FRpcValue>& Element, FProperty 
 TSharedPtr<FRpcValue> UKeyword::GenerateResponse(
     const TSharedPtr<FRpcMethodResponse>& Response, const FStringBuilderBase& OutputBuilder
 ) {
-    FStringBuilderBase JsonBuilder;
-
-    JsonBuilder.Append("{");
+    TMap<FString, TSharedPtr<FRpcValue>> Xml;
 
     const bool Success = std::holds_alternative<TSharedPtr<FRpcValue>>(*Response);
-    JsonBuilder.Appendf(TEXT("\"status\": \"%s\","), Success ? TEXT("PASS") : TEXT("FAIL"));
-    JsonBuilder.Appendf(TEXT("\"output\": \"%s\""), *OutputBuilder.ToString());
+    Xml.Emplace("status", MakeShared<FRpcValue>(Success ? "PASS" : "FAIL"));
+    Xml.Emplace("output", MakeShared<FRpcValue>(OutputBuilder.ToString()));
 
     // ToDo: 
     // if (Success) {
@@ -236,6 +232,6 @@ TSharedPtr<FRpcValue> UKeyword::GenerateResponse(
     // } else {
     //     ...
     // }
-
-    return MakeShared<FRpcValue>(JsonBuilder.ToString());
+    
+    return MakeShared<FRpcValue>(Xml);
 }

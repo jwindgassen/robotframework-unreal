@@ -43,12 +43,12 @@ TArray<FString> FKeywordManager::KeywordArguments(const FString& Keyword) const 
     return UKeyword::GetArguments(Keywords[Keyword]);
 }
 
-TMap<FString, FString> FKeywordManager::KeywordTypes(const FString& Keyword) const {
+TArray<FString> FKeywordManager::KeywordTypes(const FString& Keyword) const {
     check(HasKeyword(Keyword));
-    return UKeyword::GetArgumentTypes(Keywords[Keyword]);
+    return UKeyword::GetTypes(Keywords[Keyword]);
 }
 
-void FKeywordManager::Execute(const FString& Keyword, const TArray<TSharedPtr<FRpcValue>>& Arguments) const {
+TSharedPtr<FRpcValue> FKeywordManager::Execute(const FString& Keyword, const TArray<TSharedPtr<FRpcValue>>& Arguments) const {
     check(HasKeyword(Keyword));
-    UKeyword::Run(Keywords[Keyword], Arguments);
+    return UKeyword::Run(Keywords[Keyword], Arguments);
 }
