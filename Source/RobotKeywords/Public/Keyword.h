@@ -3,12 +3,13 @@
 #include "CoreMinimal.h"
 #include "RpcTypes.h"
 #include "UObject/Object.h"
+#include <variant>
 #include "Keyword.generated.h"
 
 
 class FXmlNode;
 struct FRpcValue;
-struct FRpcMethodResponse;
+using FKeywordResponse = std::variant<TSharedPtr<FRpcValue>, FString>;
 
 
 UCLASS(Abstract)
@@ -21,9 +22,9 @@ class ROBOTKEYWORDS_API UKeyword : public UObject {
     FStringBuilderBase OutputBuilder;
 
 public:
-    virtual TSharedPtr<FRpcMethodResponse> Execute() {
+    virtual FKeywordResponse Execute() {
         unimplemented();
-        return nullptr;
+        return Success();
     }
 
     static FString GetKeywordName(TSubclassOf<UKeyword> KeywordClass);
@@ -63,22 +64,22 @@ protected:
     /**
      * Response Generation
      */
-    TSharedPtr<FRpcMethodResponse> Success();
-    TSharedPtr<FRpcMethodResponse> Success(const int32& Value);
-    TSharedPtr<FRpcMethodResponse> Success(const bool& Value);
-    TSharedPtr<FRpcMethodResponse> Success(const FString& Value);
-    TSharedPtr<FRpcMethodResponse> Success(const double& Value);
-    TSharedPtr<FRpcMethodResponse> Success(const FDateTime& Value);
-    TSharedPtr<FRpcMethodResponse> Success(const TArray<uint8>& Value);
-    TSharedPtr<FRpcMethodResponse> Success(const TArray<TSharedPtr<FRpcValue>>& Value);
-    TSharedPtr<FRpcMethodResponse> Success(const TMap<FString, TSharedPtr<FRpcValue>>& Value);
+    FKeywordResponse Success();
+    FKeywordResponse Success(const int32& Value);
+    FKeywordResponse Success(const bool& Value);
+    FKeywordResponse Success(const FString& Value);
+    FKeywordResponse Success(const double& Value);
+    FKeywordResponse Success(const FDateTime& Value);
+    FKeywordResponse Success(const TArray<uint8>& Value);
+    FKeywordResponse Success(const TArray<TSharedPtr<FRpcValue>>& Value);
+    FKeywordResponse Success(const TMap<FString, TSharedPtr<FRpcValue>>& Value);
 
-    TSharedPtr<FRpcMethodResponse> Error(const int32& Code, const FString& Message);
+    FKeywordResponse Error(const FString& Message);
     
 private:
     static bool SetPropertyValue(const TSharedPtr<FRpcValue>& Element, FProperty const* Property, void* PropertyValue);
     
     static TSharedPtr<FRpcValue> GenerateResponse(
-        const TSharedPtr<FRpcMethodResponse>& Response, const FStringBuilderBase& OutputBuilder
+        const FKeywordResponse& Response, const FStringBuilderBase& OutputBuilder
     );
 };

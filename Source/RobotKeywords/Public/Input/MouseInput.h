@@ -16,7 +16,10 @@ class ROBOTKEYWORDS_API UHoverElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    SIMPLE_INPUT_KEYWORD_BODY("Hover on Element", Hover);
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override {
+        Element->Hover();
+        return Success();
+    }
 };
 
 
@@ -25,7 +28,10 @@ class ROBOTKEYWORDS_API UClickElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    SIMPLE_INPUT_KEYWORD_BODY("Click on Element", Click);
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override {
+        Element->Click();
+        return Success();
+    }
 };
 
 
@@ -34,7 +40,10 @@ class ROBOTKEYWORDS_API UDoubleClickElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    SIMPLE_INPUT_KEYWORD_BODY("Double Click on Element", DoubleClick);
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override {
+        Element->DoubleClick();
+        return Success();
+    }
 };
 
 
@@ -43,7 +52,10 @@ class ROBOTKEYWORDS_API URightClickElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    SIMPLE_INPUT_KEYWORD_BODY("Right Click on Element", Click, EMouseButtons::Right);
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override {
+        Element->Click(EMouseButtons::Right);
+        return Success();
+    }
 };
 
 
@@ -52,7 +64,10 @@ class ROBOTKEYWORDS_API UMiddleClickElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    SIMPLE_INPUT_KEYWORD_BODY("Middle Click on Element", Click, EMouseButtons::Middle);
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override {
+        Element->Click(EMouseButtons::Middle);
+        return Success();
+    }
 };
 
 
@@ -62,35 +77,39 @@ public:
 
 
 UCLASS()
-class ROBOTKEYWORDS_API UScrollElementKeyword : public UInputKeyword {
+class ROBOTKEYWORDS_API UScrollOnElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    virtual FString GetName() override {
-        return "Scroll on Element";
+    UPROPERTY(meta = (KeywordArgument))
+    double Delta = 2.5;
+
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override {
+        Element->ScrollBy(Delta);
+        return Success();
     }
-
-    virtual TArray<FString> GetArguments() override;
-
-    virtual TMap<FString, FString> GetArgumentTypes() override;
-
-    virtual void PerformAction(TSharedRef<IDriverElement> Element, const TArray<FString>& OtherArgs) override;
 };
 
 
 UCLASS()
-class UScrollToBeginElementKeyword : public UInputKeyword {
+class UScrollToBeginOfElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    SIMPLE_INPUT_KEYWORD_BODY("Scroll to beginning on Element", ScrollToBeginning)
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override {
+        Element->ScrollToBeginning();
+        return Success();
+    }
 };
 
 
 UCLASS()
-class UScrollToEndElementKeyword : public UInputKeyword {
+class UScrollToEndOfElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    SIMPLE_INPUT_KEYWORD_BODY("Scroll to end on Element", ScrollToEnd)
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override {
+        Element->ScrollToEnd();
+        return Success();
+    }
 };

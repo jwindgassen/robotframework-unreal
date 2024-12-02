@@ -8,38 +8,22 @@ class IAutomationDriver;
 class IElementLocator;
 class IDriverElement;
 
-/**
- * Simple macro for automatically generating a subclass of UInputKeyword, which will just call a
- * specific method on the IDriverElement. We cannot use UCLASS in a macro, so we only generate the body.
- */
-#define SIMPLE_INPUT_KEYWORD_BODY(Name, Method, ...)                                                         \
-    virtual FString GetName() override {                                                              \
-        return Name;                                                                                  \
-    }                                                                                                 \
-    virtual void PerformAction(TSharedRef<IDriverElement> Element, const TArray<FString>&) override { \
-        Element->##Method##(__VA_ARGS__);                                                             \
-    }
-
 
 UCLASS(Abstract)
 class ROBOTKEYWORDS_API UInputKeyword : public UKeyword {
     GENERATED_BODY()
 
 public:
-    virtual TArray<FString> GetArguments() override {
-        return {"Locator"};
-    }
+    UPROPERTY(meta = (KeywordArgument))
+    FString Locator;
 
-    virtual TMap<FString, FString> GetArgumentTypes() override {
-        return {{"Locator", "str"}};
-    }
+    virtual FKeywordResponse Execute() override;
 
-    virtual void Execute(const TArray<FString>& Arguments) override;
+    virtual TSharedRef<IElementLocator> GetElementLocator();
 
-    virtual TSharedRef<IElementLocator> GetLocator(const FString& Path);
-
-    virtual void PerformAction(TSharedRef<IDriverElement> Element, const TArray<FString>& OtherArgs) {
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) {
         unimplemented();
+        return Success();
     }
 
 protected:

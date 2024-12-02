@@ -6,24 +6,22 @@
 #include "LocateBy.h"
 
 
-void UInputKeyword::Execute(const TArray<FString>& Arguments) {
+FKeywordResponse UInputKeyword::Execute() {
     const auto Driver = CreateDriver();
 
-    const FString& Path = Arguments[0];
-    const auto Locator = GetLocator(Path);
-    const auto Element = Driver->FindElement(Locator);
+    const auto ElementLocator = GetElementLocator();
+    const auto Element = Driver->FindElement(ElementLocator);
 
     if (!Element->Exists()) {
-        UE_LOG(LogTemp, Error, TEXT("Could not find Element for Path '%s'"), *Path)
+        UE_LOG(LogTemp, Error, TEXT("Could not locate Element '%s'"), *Locator)
+        return Error("Could not locate Element");
     }
 
-    const TArray<FString> OtherArgs =
-        Arguments.Num() > 1 ? TArray{&Arguments[1], Arguments.Num() - 1} : TArray<FString>{};
-    PerformAction(Element, OtherArgs);
+    return PerformAction(Element);
 }
 
-TSharedRef<IElementLocator> UInputKeyword::GetLocator(const FString& Path) {
-    return By::Path(Path);
+TSharedRef<IElementLocator> UInputKeyword::GetElementLocator() {
+    return By::Path(Locator);
 }
 
 TSharedRef<IAutomationDriver> UInputKeyword::CreateDriver() {

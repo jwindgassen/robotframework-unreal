@@ -92,6 +92,10 @@ TSharedPtr<FRpcValue> UKeyword::Run(
         }
     }
 
+    if (ArgumentIndex < Arguments.Num()) {
+        UE_LOG(LogTemp, Warning, TEXT("Could not process all given Arguments (got %d, processed %d)"), Arguments.Num(), ArgumentIndex)
+    }
+
     // Execute Keyword
     const auto Response = Keyword->Execute();
 
@@ -99,44 +103,44 @@ TSharedPtr<FRpcValue> UKeyword::Run(
 }
 
 
-TSharedPtr<FRpcMethodResponse> UKeyword::Success() {
-    return MakeShared<FRpcMethodResponse>(nullptr);
+FKeywordResponse UKeyword::Success() {
+    return nullptr;
 }
 
-TSharedPtr<FRpcMethodResponse> UKeyword::Success(const int32& Value) {
-    return MakeShared<FRpcMethodResponse>(MakeShared<FRpcValue>(Value));
+FKeywordResponse UKeyword::Success(const int32& Value) {
+    return MakeShared<FRpcValue>(Value);
 }
 
-TSharedPtr<FRpcMethodResponse> UKeyword::Success(const bool& Value) {
-    return MakeShared<FRpcMethodResponse>(MakeShared<FRpcValue>(Value));
+FKeywordResponse UKeyword::Success(const bool& Value) {
+    return MakeShared<FRpcValue>(Value);
 }
 
-TSharedPtr<FRpcMethodResponse> UKeyword::Success(const FString& Value) {
-    return MakeShared<FRpcMethodResponse>(MakeShared<FRpcValue>(Value));
+FKeywordResponse UKeyword::Success(const FString& Value) {
+    return MakeShared<FRpcValue>(Value);
 }
 
-TSharedPtr<FRpcMethodResponse> UKeyword::Success(const double& Value) {
-    return MakeShared<FRpcMethodResponse>(MakeShared<FRpcValue>(Value));
+FKeywordResponse UKeyword::Success(const double& Value) {
+    return MakeShared<FRpcValue>(Value);
 }
 
-TSharedPtr<FRpcMethodResponse> UKeyword::Success(const FDateTime& Value) {
-    return MakeShared<FRpcMethodResponse>(MakeShared<FRpcValue>(Value));
+FKeywordResponse UKeyword::Success(const FDateTime& Value) {
+    return MakeShared<FRpcValue>(Value);
 }
 
-TSharedPtr<FRpcMethodResponse> UKeyword::Success(const TArray<uint8>& Value) {
-    return MakeShared<FRpcMethodResponse>(MakeShared<FRpcValue>(Value));
+FKeywordResponse UKeyword::Success(const TArray<uint8>& Value) {
+    return MakeShared<FRpcValue>(Value);
 }
 
-TSharedPtr<FRpcMethodResponse> UKeyword::Success(const TArray<TSharedPtr<FRpcValue>>& Value) {
-    return MakeShared<FRpcMethodResponse>(MakeShared<FRpcValue>(Value));
+FKeywordResponse UKeyword::Success(const TArray<TSharedPtr<FRpcValue>>& Value) {
+    return MakeShared<FRpcValue>(Value);
 }
 
-TSharedPtr<FRpcMethodResponse> UKeyword::Success(const TMap<FString, TSharedPtr<FRpcValue>>& Value) {
-    return MakeShared<FRpcMethodResponse>(MakeShared<FRpcValue>(Value));
+FKeywordResponse UKeyword::Success(const TMap<FString, TSharedPtr<FRpcValue>>& Value) {
+    return MakeShared<FRpcValue>(Value);
 }
 
-TSharedPtr<FRpcMethodResponse> UKeyword::Error(const int32& Code, const FString& Message) {
-    return MakeShared<FRpcMethodResponse>(MakeTuple(Code, Message));
+FKeywordResponse UKeyword::Error(const FString& Message) {
+    return Message;
 }
 
 
@@ -218,11 +222,11 @@ bool UKeyword::SetPropertyValue(const TSharedPtr<FRpcValue>& Element, FProperty 
 }
 
 TSharedPtr<FRpcValue> UKeyword::GenerateResponse(
-    const TSharedPtr<FRpcMethodResponse>& Response, const FStringBuilderBase& OutputBuilder
+    const FKeywordResponse& Response, const FStringBuilderBase& OutputBuilder
 ) {
     TMap<FString, TSharedPtr<FRpcValue>> Xml;
 
-    const bool Success = std::holds_alternative<TSharedPtr<FRpcValue>>(*Response);
+    const bool Success = std::holds_alternative<TSharedPtr<FRpcValue>>(Response);
     Xml.Emplace("status", MakeShared<FRpcValue>(Success ? "PASS" : "FAIL"));
     Xml.Emplace("output", MakeShared<FRpcValue>(OutputBuilder.ToString()));
 

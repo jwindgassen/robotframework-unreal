@@ -14,7 +14,7 @@ public:
     UPROPERTY(meta = (KeywordArgument))
     double Duration = 10;
 
-    TSharedPtr<FRpcMethodResponse> Execute() override {
+    virtual FKeywordResponse Execute() override {
         LogInfo(TEXT("Some Number: %d"), 42);
 
         GEngine->AddOnScreenDebugMessage(-1, Duration, FColor::Purple, Message);
