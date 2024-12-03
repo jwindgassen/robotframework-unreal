@@ -1,5 +1,4 @@
 ﻿#include "Keyword.h"
-#include "RpcTypes.h"
 #include <variant>
 
 
@@ -84,7 +83,7 @@ TSharedPtr<FRpcValue> UKeyword::Run(
             continue;
         }
 
-        if (!SetPropertyValue(Arguments[ArgumentIndex], *Iter, Iter->ContainerPtrToValuePtr<void>(Keyword))) {
+        if (!Arguments[ArgumentIndex]->ParseIntoProperty(*Iter, Iter->ContainerPtrToValuePtr<void>(Keyword))) {
             UE_LOG(
                 LogTemp, Error, TEXT("Could not set property '%s' on '%s'"), *Iter->GetName(),
                 *KeywordClass->GetName()
@@ -143,92 +142,14 @@ FKeywordResponse UKeyword::Error(const FString& Message) {
     return Message;
 }
 
-
-bool UKeyword::SetPropertyValue(const TSharedPtr<FRpcValue>& Element, FProperty const* Property, void* PropertyValue) {
-    if (const auto* NumericProperty = CastField<FNumericProperty>(Property)) {
-        if (NumericProperty->IsInteger()) {
-            check(std::holds_alternative<int32>(*Element))
-
-            NumericProperty->SetIntPropertyValue(PropertyValue, static_cast<int64>(std::get<int32>(*Element)));
-            return true;
-        }
-
-        if (NumericProperty->IsFloatingPoint()) {
-            check(std::holds_alternative<double>(*Element))
-
-            NumericProperty->SetFloatingPointPropertyValue(PropertyValue, std::get<double>(*Element));
-            return true;
-        }
-
-        return false;
-    }
-
-    if (const auto* BoolProperty = CastField<FBoolProperty>(Property)) {
-        check(std::holds_alternative<bool>(*Element))
-
-        BoolProperty->SetPropertyValue(PropertyValue, std::get<bool>(*Element));
-        return true;
-    }
-
-    if (const auto* StringProperty = CastField<FStrProperty>(Property)) {
-        check(std::holds_alternative<FString>(*Element))
-
-        StringProperty->SetPropertyValue(PropertyValue, std::get<FString>(*Element));
-        return true;
-    }
-
-    if (const auto* ArrayProperty = CastField<FArrayProperty>(Property)) {
-        FScriptArrayHelper Helper{ArrayProperty, PropertyValue};
-
-        if (CastField<FByteProperty>(ArrayProperty->Inner)) {
-            check(std::holds_alternative<TArray<uint8>>(*Element))
-
-            auto& Array = std::get<TArray<uint8>>(*Element);
-            Helper.MoveAssign(&Array);
-
-            return true;
-        }
-
-        if (CastField<FObjectPtrProperty>(ArrayProperty->Inner)) {
-            check(std::holds_alternative<TArray<TSharedPtr<FRpcValue>>>(*Element))
-
-            const auto& Array = std::get<TArray<TSharedPtr<FRpcValue>>>(*Element);
-            Helper.AddValues(Array.Num());
-
-            for (int32 i = 0; i < Array.Num(); ++i) {
-                SetPropertyValue(Array[i], ArrayProperty->Inner, Helper.GetRawPtr(i));
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
-    if (const auto* MapProperty = CastField<FMapProperty>(Property)) {
-        using FRpcValueMap = TMap<FString, TSharedPtr<FRpcValue>>;
-        
-        check(std::holds_alternative<FRpcValueMap>(*Element))
-        check(CastField<FStrProperty>(MapProperty->KeyProp))
-        check(CastField<FObjectPtrProperty>(MapProperty->ValueProp))
-
-        // const auto& Map = std::get<TMap<FString, TSharedPtr<FRpcValue>>>(*Element);
-        // FScriptMapHelper Helper{MapProperty, PropertyValue};
-        checkf(false, TEXT("ToDo"))
-        return false;
-    }
-
-    return false;
-}
-
 TSharedPtr<FRpcValue> UKeyword::GenerateResponse(
     const FKeywordResponse& Response, const FStringBuilderBase& OutputBuilder
 ) {
     TMap<FString, TSharedPtr<FRpcValue>> Xml;
 
     const bool Success = std::holds_alternative<TSharedPtr<FRpcValue>>(Response);
-    Xml.Emplace("status", MakeShared<FRpcValue>(Success ? "PASS" : "FAIL"));
-    Xml.Emplace("output", MakeShared<FRpcValue>(OutputBuilder.ToString()));
+    Xml.Emplace("status", MakeShared<FRpcValue>(FString{Success ? "PASS" : "FAIL"}));
+    Xml.Emplace("output", MakeShared<FRpcValue>(FString{OutputBuilder.ToString()}));
 
     // ToDo: 
     // if (Success) {

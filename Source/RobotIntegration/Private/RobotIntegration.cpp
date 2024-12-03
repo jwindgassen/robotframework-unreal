@@ -31,10 +31,10 @@ void FRobotIntegrationModule::StartupModule() {
         "get_keyword_arguments",
         [](const TArray<TSharedPtr<FRpcValue>>& Arguments) -> FRpcMethodResponse {
             checkf(
-                Arguments.Num() == 1 && std::holds_alternative<FString>(*Arguments[0]),
+                Arguments.Num() == 1 && Arguments[0]->IsString(),
                 TEXT("'get_keywords_arguments' expects exactly 1 String as Argument")
             )
-            const FString& Keyword = std::get<FString>(*Arguments[0]);
+            const FString& Keyword = Arguments[0]->GetString();
 
             TArray<TSharedPtr<FRpcValue>> Response;
             for (const FString& Arg : FKeywordManager::Get().KeywordArguments(Keyword)) {
@@ -48,10 +48,10 @@ void FRobotIntegrationModule::StartupModule() {
         "get_keyword_types",
         [](const TArray<TSharedPtr<FRpcValue>>& Arguments) -> FRpcMethodResponse {
             checkf(
-                Arguments.Num() == 1 && std::holds_alternative<FString>(*Arguments[0]),
+                Arguments.Num() == 1 && Arguments[0]->IsString(),
                 TEXT("'get_keyword_types' expects exactly 1 String as Argument")
             )
-            const FString& Keyword = std::get<FString>(*Arguments[0]);
+            const FString& Keyword = Arguments[0]->GetString();
 
             TArray<TSharedPtr<FRpcValue>> Response;
             for (const auto& Type : FKeywordManager::Get().KeywordTypes(Keyword)) {
@@ -65,14 +65,13 @@ void FRobotIntegrationModule::StartupModule() {
         "run_keyword",
         [](const TArray<TSharedPtr<FRpcValue>>& Arguments) -> FRpcMethodResponse {
             checkf(
-                Arguments.Num() >= 1 && std::holds_alternative<FString>(*Arguments[0]),
+                Arguments.Num() >= 1 && Arguments[0]->IsString(),
                 TEXT("'run_keyword' need at least 1 String as Argument")
             )
             
             return FKeywordManager::Get().Execute(
-                std::get<FString>(*Arguments[0]),
-                Arguments.Num() == 2 ? std::get<TArray<TSharedPtr<FRpcValue>>>(*Arguments[1])
-                                     : TArray<TSharedPtr<FRpcValue>>{}
+                Arguments[0]->GetString(),
+                Arguments.Num() == 2 ? Arguments[1]->GetList() : TArray<TSharedPtr<FRpcValue>>{}
             );
         }
     );

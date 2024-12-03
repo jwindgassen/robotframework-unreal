@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "HttpRouteHandle.h"
-#include "RpcTypes.h"
+#include "RpcValue.h"
 #include "XmlRpcServer.generated.h"
 
 
@@ -43,8 +43,6 @@ private:
     TArray<TSharedPtr<FRpcValue>> ParseArguments(const class FXmlNode* Params);
 
     TSharedPtr<FRpcValue> ParseValue(const class FXmlNode* ValueNode);
-
-    void BuildValueNode(FStringBuilderBase& Builder, const TSharedPtr<FRpcValue>& Value);
 
     FString BuildXmlResponse(FRpcMethodResponse Response);
 };

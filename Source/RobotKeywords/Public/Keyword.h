@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "RpcTypes.h"
+#include "RpcValue.h"
 #include "UObject/Object.h"
 #include <variant>
 #include "Keyword.generated.h"
@@ -77,8 +77,6 @@ protected:
     FKeywordResponse Error(const FString& Message);
     
 private:
-    static bool SetPropertyValue(const TSharedPtr<FRpcValue>& Element, FProperty const* Property, void* PropertyValue);
-    
     static TSharedPtr<FRpcValue> GenerateResponse(
         const FKeywordResponse& Response, const FStringBuilderBase& OutputBuilder
     );

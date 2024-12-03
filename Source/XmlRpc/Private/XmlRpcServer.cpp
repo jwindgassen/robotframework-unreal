@@ -154,65 +154,13 @@ TSharedPtr<FRpcValue> FXmlRpcServer::ParseValue(const FXmlNode* ValueNode) {
     return nullptr;
 }
 
-void FXmlRpcServer::BuildValueNode(FStringBuilderBase& Builder, const TSharedPtr<FRpcValue>& Value) {
-    if (!Value.IsValid()) {
-        return;
-    }
-    
-    Builder.Append("<value>");
-    
-    switch (Value->index()) {
-        case 0: Builder.Appendf(TEXT("<i4>%d</i4>"), std::get<int32>(*Value)); break;
-        case 1: Builder.Appendf(TEXT("<bool>%s</bool>"), std::get<bool>(*Value) ? TEXT("1") : TEXT("0")); break;
-        case 2: Builder.Appendf(TEXT("<string>%s</string>"), *std::get<FString>(*Value)); break;
-        case 3: Builder.Appendf(TEXT("<double>%f</double>"), std::get<double>(*Value)); break;
-        case 4: {
-            Builder.Appendf(TEXT("<dateTime.iso8601>%s</dateTime.iso8601>"), *std::get<FDateTime>(*Value).ToIso8601());
-            break;
-        }
-        case 5: {
-            Builder.Appendf(TEXT("<base64>%s<base64>"), *FBase64::Encode(std::get<TArray<uint8>>(*Value)));
-            break;
-        }
-        case 6: {
-            Builder.Append("<array><data>");
-            for (const auto& Val : std::get<TArray<TSharedPtr<FRpcValue>>>(*Value)) {
-                BuildValueNode(Builder, Val);
-            }
-            Builder.Append("</data></array>");
-            
-            break;
-        }
-        case 7: {
-            Builder.Append("<struct>");
-            for (const auto& [Name, Val] : std::get<TMap<FString, TSharedPtr<FRpcValue>>>(*Value)) {
-                Builder.Appendf(TEXT("<member><name>%s</name>"), *Name);
-                BuildValueNode(Builder, Val);
-                Builder.Append("</member>");
-            }
-            Builder.Append("</struct>");
-
-            break;
-        }
-        default: {
-            UE_LOG(LogXmlRpcServer, Error, TEXT("Unknown FRpcValue Index"))
-        }
-    }
-
-    Builder.Append("</value>");
-}
-
 FString FXmlRpcServer::BuildXmlResponse(FRpcMethodResponse Response) {
     FStringBuilderBase ResponseXml;
     ResponseXml.Append("<?xml version=\"1.0\"?>");
     ResponseXml.Append("<methodResponse>");
 
     if (std::holds_alternative<TSharedPtr<FRpcValue>>(Response)) {
-        const TSharedPtr<FRpcValue> Value = std::get<0>(Response);
-        
-        ResponseXml.Append("<params><param>");
-        BuildValueNode(ResponseXml, Value);
-        ResponseXml.Append("</param></params>");
+        ResponseXml.Appendf(TEXT("<params><param>%s</param></params>"), *std::get<0>(Response)->ParseToXmlString());
     } else {
         const TTuple<int32, FString> Fault = std::get<1>(Response);
         
