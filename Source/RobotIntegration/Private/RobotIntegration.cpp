@@ -17,19 +17,19 @@ void FRobotIntegrationModule::StartupModule() {
     
     Server.Start();
 
-    Server.RegisterProcedure("get_keyword_names", [](const TArray<TSharedPtr<FRpcValue>>&) -> FRpcMethodResponse {
+    Server.RegisterProcedure("get_keyword_names", [](const TArray<TSharedPtr<FRpcValue>>&) {
         const TArray<FString> Keywords = FKeywordManager::Get().KeywordNames();
 
         TArray<TSharedPtr<FRpcValue>> Response;
         for (const FString& Name : Keywords) {
             Response.Add(MakeShared<FRpcValue>(Name));
         }
-        return MakeShared<FRpcValue>(Response);
+        return MakeShared<FRpcMethodResponse>(MakeShared<FRpcValue>(Response));
     });
 
     Server.RegisterProcedure(
         "get_keyword_arguments",
-        [](const TArray<TSharedPtr<FRpcValue>>& Arguments) -> FRpcMethodResponse {
+        [](const TArray<TSharedPtr<FRpcValue>>& Arguments) {
             checkf(
                 Arguments.Num() == 1 && Arguments[0]->IsString(),
                 TEXT("'get_keywords_arguments' expects exactly 1 String as Argument")
@@ -40,13 +40,13 @@ void FRobotIntegrationModule::StartupModule() {
             for (const FString& Arg : FKeywordManager::Get().KeywordArguments(Keyword)) {
                 Response.Add(MakeShared<FRpcValue>(Arg));
             }
-            return MakeShared<FRpcValue>(Response);
+            return MakeShared<FRpcMethodResponse>(MakeShared<FRpcValue>(Response));
         }
     );
 
     Server.RegisterProcedure(
         "get_keyword_types",
-        [](const TArray<TSharedPtr<FRpcValue>>& Arguments) -> FRpcMethodResponse {
+        [](const TArray<TSharedPtr<FRpcValue>>& Arguments) {
             checkf(
                 Arguments.Num() == 1 && Arguments[0]->IsString(),
                 TEXT("'get_keyword_types' expects exactly 1 String as Argument")
@@ -57,22 +57,22 @@ void FRobotIntegrationModule::StartupModule() {
             for (const auto& Type : FKeywordManager::Get().KeywordTypes(Keyword)) {
                 Response.Add(MakeShared<FRpcValue>(Type));
             }
-            return MakeShared<FRpcValue>(Response);
+            return MakeShared<FRpcMethodResponse>(MakeShared<FRpcValue>(Response));
         }
     );
 
     Server.RegisterProcedure(
         "run_keyword",
-        [](const TArray<TSharedPtr<FRpcValue>>& Arguments) -> FRpcMethodResponse {
+        [](const TArray<TSharedPtr<FRpcValue>>& Arguments) {
             checkf(
                 Arguments.Num() >= 1 && Arguments[0]->IsString(),
                 TEXT("'run_keyword' need at least 1 String as Argument")
             )
             
-            return FKeywordManager::Get().Execute(
+            return MakeShared<FRpcMethodResponse>(FKeywordManager::Get().Execute(
                 Arguments[0]->GetString(),
                 Arguments.Num() == 2 ? Arguments[1]->GetList() : TArray<TSharedPtr<FRpcValue>>{}
-            );
+            ));
         }
     );
 }

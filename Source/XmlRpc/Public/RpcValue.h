@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
-#include <variant>
 #include "RpcValue.generated.h"
 
 
@@ -13,7 +12,7 @@ using FRpcValueStruct = TMap<FString, TSharedPtr<FRpcValue>>;
 
 
 UENUM()
-enum class ERpcValueType : uint8 { Integer, Double, Boolean, String, DateTime, Binary, List, Struct, Null };
+enum class ERpcValueType : uint8 { Integer, Double, Boolean, String, DateTime, Binary, List, Struct, Nil };
 
 
 #define RPC_VALUE_DEFINE_TYPE(CppType, EnumType)                                 \
@@ -30,21 +29,16 @@ USTRUCT()
 struct XMLRPC_API FRpcValue {
     GENERATED_BODY()
 
+    friend struct FRpcMethodResponse;
+
 private:
     using FValueType = TVariant<
-        int32, double, bool, FString, FDateTime, TArray<uint8>, FRpcValueList, FRpcValueStruct, FEmptyVariantState>;
+        FEmptyVariantState, int32, double, bool, FString, FDateTime, TArray<uint8>, FRpcValueList, FRpcValueStruct>;
 
     FValueType Value;
 
 public:
-    // Default Constructor for an empty Variant
-    FRpcValue() : Value(TInPlaceType<FEmptyVariantState>{}) {}
-
-    ERpcValueType Type() const;
-
-    operator bool() const {
-        return Type() != ERpcValueType::Null;
-    }
+    FRpcValue() = default;
 
     RPC_VALUE_DEFINE_TYPE(int32, Integer)
     RPC_VALUE_DEFINE_TYPE(double, Double)
@@ -54,6 +48,12 @@ public:
     RPC_VALUE_DEFINE_TYPE(TArray<uint8>, Binary)
     RPC_VALUE_DEFINE_TYPE(FRpcValueList, List)
     RPC_VALUE_DEFINE_TYPE(FRpcValueStruct, Struct)
+
+    ERpcValueType Type() const;
+
+    operator bool() const {
+        return Type() != ERpcValueType::Nil;
+    }
 
     template<typename T>
     T& Get() {
@@ -76,26 +76,58 @@ public:
     }
 
     FXmlNode* ParseToXml() const;
-    
+
     FString ParseToXmlString() const;
 
     bool ParseIntoProperty(FProperty* Property, void* PropertyValue) const;
 
+    static TSharedPtr<FRpcValue> FromXml(const FXmlNode* ValueNode);
+
 private:
     void ParseIntoStringBuilder(FStringBuilderBase& Builder) const;
-    
 };
+
 
 #undef RPC_VALUE_DEFINE_TYPE
 
 
-struct XMLRPC_API FRpcMethodResponse :
-    std::variant<
-        TSharedPtr<FRpcValue>, /* Success */
-        TTuple<int32, FString> /* Fault */
-        > {
-    using FBase = std::variant<TSharedPtr<FRpcValue>, TTuple<int32, FString>>;
-    using FBase::FBase;
-    using FBase::operator=;
-    using FBase::index;
+USTRUCT()
+struct XMLRPC_API FRpcMethodResponse {
+    GENERATED_BODY()
+
+    using FSuccess = TSharedPtr<FRpcValue>;
+    using FFault = TTuple<int32, FString>;
+
+private:
+    TVariant<FEmptyVariantState, FSuccess, FFault> Value;
+
+public:
+    FRpcMethodResponse() = default;
+
+    explicit FRpcMethodResponse(FSuccess Value) : Value(TInPlaceType<FSuccess>{}, Value) {}
+
+    explicit FRpcMethodResponse(FFault Value) : Value(TInPlaceType<FFault>{}, Value) {}
+
+    explicit FRpcMethodResponse(int32 FaultCode, const FString& FaultMessage) :
+        Value(TInPlaceType<FFault>{}, MakeTuple(FaultCode, FaultMessage)) {}
+
+    bool IsSuccess() const {
+        return Value.IsType<FSuccess>();
+    }
+
+    operator bool() const {
+        return IsSuccess();
+    }
+
+    FSuccess GetSuccess() const {
+        return Value.Get<FSuccess>();
+    }
+
+    FFault GetFault() const {
+        return Value.Get<FFault>();
+    }
+
+    FXmlNode* ParseToXml() const;
+
+    FString ParseToXmlString() const;
 };
