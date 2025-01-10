@@ -14,7 +14,10 @@ public class RobotIntegration : ModuleRules {
 		PublicDependencyModuleNames.AddRange(new []{
 			"Core",
 			"XmlRpc",
-			"RobotKeywords"
+			"RobotKeywords",
+			"SlateCore",
+			"Slate",
+			"UMG",
 		});
 
 		PrivateDependencyModuleNames.AddRange(new []{

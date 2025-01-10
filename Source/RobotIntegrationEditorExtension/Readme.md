@@ -1,2 +1,0 @@
-﻿# RobotIntegration Editor Extension
-
