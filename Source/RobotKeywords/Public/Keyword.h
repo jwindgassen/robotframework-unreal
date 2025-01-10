@@ -12,6 +12,24 @@ struct FRpcValue;
 using FKeywordResponse = std::variant<TSharedPtr<FRpcValue>, FString>;
 
 
+USTRUCT()
+struct FKeywordInformation {
+    GENERATED_BODY()
+
+    UPROPERTY()
+    TArray<FString> Arguments;
+
+    UPROPERTY()
+    TArray<FString> Types;
+
+    UPROPERTY()
+    FString Documentation;
+
+    UPROPERTY()
+    TArray<FString> Tags;
+};
+
+
 UCLASS(Abstract)
 class ROBOTKEYWORDS_API UKeyword : public UObject {
     GENERATED_BODY()
@@ -32,6 +50,12 @@ public:
     static TArray<FString> GetArguments(TSubclassOf<UKeyword> KeywordClass);
     
     static TArray<FString> GetTypes(TSubclassOf<UKeyword> KeywordClass);
+
+    static FString GetDocumentation(TSubclassOf<UKeyword> KeywordClass);
+    
+    static TArray<FString> GetTags(TSubclassOf<UKeyword> KeywordClass);
+
+    static FKeywordInformation GetKeywordInformation(TSubclassOf<UKeyword> KeywordClass);
     
     static TSharedPtr<FRpcValue> Run(TSubclassOf<UKeyword> KeywordClass, const TArray<TSharedPtr<FRpcValue>>& Arguments);
 

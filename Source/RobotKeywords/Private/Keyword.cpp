@@ -54,8 +54,8 @@ TArray<FString> UKeyword::GetTypes(TSubclassOf<UKeyword> KeywordClass) {
         FString* Type = CppTypesToRobotTypes.Find(Iter->GetCPPType(&InnerType));
         if (!Type) {
             UE_LOG(
-                LogTemp, Error, TEXT("Unknown Keyword Argument Type for Property '%s::%s'"),
-                *KeywordClass->GetName(), *Iter->GetName()
+                LogTemp, Error, TEXT("Unknown Keyword Argument Type for Property '%s::%s'"), *KeywordClass->GetName(),
+                *Iter->GetName()
             )
         }
 
@@ -63,12 +63,41 @@ TArray<FString> UKeyword::GetTypes(TSubclassOf<UKeyword> KeywordClass) {
         if (*Type == "list" && InnerType == "uint8") {
             *Type = "bytes";
         }
-        
+
         Types.Add(*Type);
     }
 
     return Types;
 }
+
+FString UKeyword::GetDocumentation(TSubclassOf<UKeyword> KeywordClass){
+    return KeywordClass->GetDescription();
+}
+
+TArray<FString> UKeyword::GetTags(TSubclassOf<UKeyword> KeywordClass) {
+    const FString TagString = KeywordClass->GetMetaData("KeywordTags");
+
+    // Split by commas
+    TArray<FString> Tags;
+    TagString.ParseIntoArray(Tags, TEXT(","));
+
+    // Trim whitespaces
+    for (auto& Tag : Tags) {
+        Tag.TrimStartAndEndInline();
+    }
+
+    return Tags;
+}
+
+FKeywordInformation UKeyword::GetKeywordInformation(TSubclassOf<UKeyword> KeywordClass) {
+    return FKeywordInformation{
+        .Arguments = GetArguments(KeywordClass),
+        .Types = GetTypes(KeywordClass),
+        .Documentation =  GetDocumentation(KeywordClass),
+        .Tags = GetTags(KeywordClass),
+    };
+}
+
 
 TSharedPtr<FRpcValue> UKeyword::Run(
     const TSubclassOf<UKeyword> KeywordClass, const TArray<TSharedPtr<FRpcValue>>& Arguments

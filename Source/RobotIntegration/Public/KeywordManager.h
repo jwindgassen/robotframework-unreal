@@ -20,10 +20,8 @@ public:
     TArray<FString> KeywordNames() const;
 
     bool HasKeyword(const FString& Name) const;
-    
-    TArray<FString> KeywordArguments(const FString& Keyword) const;
 
-    TArray<FString> KeywordTypes(const FString& Keyword) const;
+    TSharedPtr<FRpcValue> LibraryInformation() const;
 
     TSharedPtr<FRpcValue> Execute(const FString& Keyword, const TArray<TSharedPtr<FRpcValue>>& Arguments) const;
 };
