@@ -1,2 +1,5 @@
 ﻿Binaries/
 Intermediate/
+
+# Ignore Copied AutomationDriver
+Source/RobotKeywords/AutomationDriver/
