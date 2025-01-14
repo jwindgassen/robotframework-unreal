@@ -10,7 +10,7 @@ class UEnterTextOnElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    UPROPERTY(meta = (KeywordArgument))
+    UPROPERTY()
     FString Text;
 
     virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override {

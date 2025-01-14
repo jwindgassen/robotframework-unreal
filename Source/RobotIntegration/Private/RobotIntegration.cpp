@@ -8,6 +8,12 @@ IMPLEMENT_MODULE(FRobotIntegrationModule, RobotIntegration)
 
 
 void FRobotIntegrationModule::StartupModule() {
+    // Do not start an HTTP Server while Packaging
+    if (IsRunningCommandlet()) {
+        UE_LOG(LogTemp, Warning, TEXT("Detected running Commandlet. RobotIntegration RPC Server will not be started"))
+        return;
+    }
+    
     Server.Start();
 
     Server.RegisterProcedure("get_library_information", [](const TArray<TSharedPtr<FRpcValue>>&) {

@@ -9,7 +9,23 @@
 
 class FXmlNode;
 struct FRpcValue;
+
 using FKeywordResponse = std::variant<TSharedPtr<FRpcValue>, FString>;
+
+
+USTRUCT()
+struct FKeywordArgument {
+    GENERATED_BODY()
+
+    UPROPERTY()
+    FString Name;
+
+    UPROPERTY()
+    FString Type;
+
+    UPROPERTY()
+    FString DefaultValue = "";
+};
 
 
 USTRUCT()
@@ -17,16 +33,16 @@ struct FKeywordInformation {
     GENERATED_BODY()
 
     UPROPERTY()
-    TArray<FString> Arguments;
+    FString Name;
 
     UPROPERTY()
-    TArray<FString> Types;
+    TArray<FKeywordArgument> Arguments;
 
     UPROPERTY()
-    FString Documentation;
+    FString Documentation = "";
 
     UPROPERTY()
-    TArray<FString> Tags;
+    TArray<FString> Tags = {};
 };
 
 
@@ -35,28 +51,18 @@ class ROBOTKEYWORDS_API UKeyword : public UObject {
     GENERATED_BODY()
 
     friend class UKeywordRunner;
-    
+
     // Used to generate the output logs.
     FStringBuilderBase OutputBuilder;
 
 public:
+    virtual FKeywordInformation GetKeywordInformation() const;
+
     virtual FKeywordResponse Execute() {
         unimplemented();
         return Success();
     }
 
-    static FString GetKeywordName(TSubclassOf<UKeyword> KeywordClass);
-
-    static TArray<FString> GetArguments(TSubclassOf<UKeyword> KeywordClass);
-    
-    static TArray<FString> GetTypes(TSubclassOf<UKeyword> KeywordClass);
-
-    static FString GetDocumentation(TSubclassOf<UKeyword> KeywordClass);
-    
-    static TArray<FString> GetTags(TSubclassOf<UKeyword> KeywordClass);
-
-    static FKeywordInformation GetKeywordInformation(TSubclassOf<UKeyword> KeywordClass);
-    
     static TSharedPtr<FRpcValue> Run(TSubclassOf<UKeyword> KeywordClass, const TArray<TSharedPtr<FRpcValue>>& Arguments);
 
 protected:
@@ -99,7 +105,7 @@ protected:
     FKeywordResponse Success(const TMap<FString, TSharedPtr<FRpcValue>>& Value);
 
     FKeywordResponse Error(const FString& Message);
-    
+
 private:
     static TSharedPtr<FRpcValue> GenerateResponse(
         const FKeywordResponse& Response, const FStringBuilderBase& OutputBuilder

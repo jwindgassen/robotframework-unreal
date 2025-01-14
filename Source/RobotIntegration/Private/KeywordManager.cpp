@@ -1,7 +1,5 @@
 ﻿#include "KeywordManager.h"
 
-#include "Keyword.h"
-
 
 FKeywordManager* FKeywordManager::Instance = nullptr;
 
@@ -16,7 +14,9 @@ FKeywordManager::FKeywordManager() {
     });
     
     for (auto* Class : Classes) {
-        Keywords.Emplace(UKeyword::GetKeywordName(Class), Class);
+        const UKeyword* Keyword = NewObject<UKeyword>(GetTransientPackage(), Class);
+        FKeywordCacheType Cache = MakeTuple(Class, Keyword->GetKeywordInformation());
+        Keywords.Emplace(Keyword->GetKeywordInformation().Name, Cache);
     }
 }
 
@@ -49,34 +49,32 @@ TSharedPtr<FRpcValue> FKeywordManager::LibraryInformation() const {
     LibraryInformation.Emplace("__intro__", MakeShared<FRpcValue>(Intro));
     LibraryInformation.Emplace("__init__", MakeShared<FRpcValue>(Intro));
     
-    for (const auto& [Name, Keyword] : Keywords) {
-        const auto& [Arguments, Types, Documentation, Tags] = UKeyword::GetKeywordInformation(Keyword);
+    for (const auto& [KeywordName, Tuple] : Keywords) {
+        const FKeywordInformation& KeywordInformation = Tuple.Value;
         
         FRpcValueStruct Information;
-        Information.Add("docs", MakeShared<FRpcValue>(Documentation));
+        Information.Add("docs", MakeShared<FRpcValue>(KeywordInformation.Documentation));
 
-        // Convert Arguments
-        FRpcValueList Args;
-        for (const auto& Argument : Arguments) {
-            Args.Push(MakeShared<FRpcValue>(Argument));
+        // Convert Arguments & Types
+        FRpcValueList Args, Types;
+        for (const auto& Arg : KeywordInformation.Arguments) {
+            Args.Add(MakeShared<FRpcValue>(
+                Arg.DefaultValue.IsEmpty() ? FString::Printf(TEXT("%s=%s"), *Arg.Name, *Arg.DefaultValue) : Arg.Name
+            ));
+            Types.Add(MakeShared<FRpcValue>(Arg.Type));
         }
+        
         Information.Add("args", MakeShared<FRpcValue>(Args));
-
-        // Convert Types
-        FRpcValueList TypeList;
-        for (const auto& Type : Types) {
-            TypeList.Push(MakeShared<FRpcValue>(Type));
-        }
-        Information.Add("types", MakeShared<FRpcValue>(TypeList));
+        Information.Add("types", MakeShared<FRpcValue>(Types));
     
         // Convert Tags
         FRpcValueList TagList;
-        for (const auto& Tag : Tags) {
+        for (const auto& Tag : KeywordInformation.Tags) {
             TagList.Push(MakeShared<FRpcValue>(Tag));
         }
         Information.Add("tags", MakeShared<FRpcValue>(TagList));
         
-        LibraryInformation.Add(Name, MakeShared<FRpcValue>(Information));
+        LibraryInformation.Add(KeywordName, MakeShared<FRpcValue>(Information));
     }
     
     return MakeShared<FRpcValue>(LibraryInformation);
@@ -84,5 +82,5 @@ TSharedPtr<FRpcValue> FKeywordManager::LibraryInformation() const {
 
 TSharedPtr<FRpcValue> FKeywordManager::Execute(const FString& Keyword, const TArray<TSharedPtr<FRpcValue>>& Arguments) const {
     check(HasKeyword(Keyword));
-    return UKeyword::Run(Keywords[Keyword], Arguments);
+    return UKeyword::Run(Keywords[Keyword].Key, Arguments);
 }

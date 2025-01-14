@@ -8,10 +8,10 @@ class UPrintMessageOnScreenKeyword : public UKeyword {
     GENERATED_BODY()
     
 public:
-    UPROPERTY(meta = (KeywordArgument))
+    UPROPERTY()
     FString Message;
     
-    UPROPERTY(meta = (KeywordArgument))
+    UPROPERTY()
     double Duration = 10;
 
     virtual FKeywordResponse Execute() override {

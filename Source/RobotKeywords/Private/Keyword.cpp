@@ -2,38 +2,9 @@
 #include <variant>
 
 
-FString UKeyword::GetKeywordName(TSubclassOf<UKeyword> KeywordClass) {
-    FString Name = KeywordClass->GetDisplayNameText().ToString();
-    
-    if (!Name.EndsWith("Keyword")) {
-        UE_LOG(LogTemp, Warning, TEXT("Keyword Subclasses should end with 'Keyword': %s"), *Name);
-        return Name;
-    }
-
-    // Remove Suffix
-    Name = Name.Left(Name.Len() - 7);
-    Name.TrimEndInline();
-
-    return Name;
-}
-
-TArray<FString> UKeyword::GetArguments(TSubclassOf<UKeyword> KeywordClass) {
-    TArray<FString> Names;
-
-    for (TFieldIterator<FProperty> Iter(KeywordClass); Iter; ++Iter) {
-        if (!Iter->HasMetaData(TEXT("KeywordArgument"))) {
-            continue;
-        }
-
-        // ToDo: Default Values
-        Names.Add(Iter->GetName());
-    }
-
-    return Names;
-}
-
-TArray<FString> UKeyword::GetTypes(TSubclassOf<UKeyword> KeywordClass) {
-    TArray<FString> Types;
+FKeywordInformation UKeyword::GetKeywordInformation() const {
+    FString KeywordName = GetClass()->GetName();
+    KeywordName = KeywordName.Left(KeywordName.Len() - 7).TrimEnd();  // Remove Suffix
 
     static TMap<FString, FString> CppTypesToRobotTypes = {
         {"int32", "int"},
@@ -45,17 +16,15 @@ TArray<FString> UKeyword::GetTypes(TSubclassOf<UKeyword> KeywordClass) {
         {"TMap", "dict"},
     };
 
-    for (TFieldIterator<FProperty> Iter(KeywordClass); Iter; ++Iter) {
-        if (!Iter->HasMetaData(TEXT("KeywordArgument"))) {
-            continue;
-        }
-
+    TArray<FKeywordArgument> Arguments;
+    for (TFieldIterator<FProperty> Iter(GetClass()); Iter; ++Iter) {
+        // Determine Type
         FString InnerType;
         FString* Type = CppTypesToRobotTypes.Find(Iter->GetCPPType(&InnerType));
         if (!Type) {
             UE_LOG(
-                LogTemp, Error, TEXT("Unknown Keyword Argument Type for Property '%s::%s'"), *KeywordClass->GetName(),
-                *Iter->GetName()
+                LogTemp, Error, TEXT("Unknown Keyword Argument Type for Property '%s::%s'"),
+                *GetClass()->GetName(), *Iter->GetName()
             )
         }
 
@@ -64,37 +33,15 @@ TArray<FString> UKeyword::GetTypes(TSubclassOf<UKeyword> KeywordClass) {
             *Type = "bytes";
         }
 
-        Types.Add(*Type);
+        // ToDo: Default Values
+        Arguments.Emplace(Iter->GetName(), *Type, "");
     }
-
-    return Types;
-}
-
-FString UKeyword::GetDocumentation(TSubclassOf<UKeyword> KeywordClass){
-    return KeywordClass->GetDescription();
-}
-
-TArray<FString> UKeyword::GetTags(TSubclassOf<UKeyword> KeywordClass) {
-    const FString TagString = KeywordClass->GetMetaData("KeywordTags");
-
-    // Split by commas
-    TArray<FString> Tags;
-    TagString.ParseIntoArray(Tags, TEXT(","));
-
-    // Trim whitespaces
-    for (auto& Tag : Tags) {
-        Tag.TrimStartAndEndInline();
-    }
-
-    return Tags;
-}
-
-FKeywordInformation UKeyword::GetKeywordInformation(TSubclassOf<UKeyword> KeywordClass) {
-    return FKeywordInformation{
-        .Arguments = GetArguments(KeywordClass),
-        .Types = GetTypes(KeywordClass),
-        .Documentation =  GetDocumentation(KeywordClass),
-        .Tags = GetTags(KeywordClass),
+    
+    return {
+        .Name = KeywordName,
+        .Arguments = Arguments,
+        .Documentation = "",
+        .Tags = {},
     };
 }
 
@@ -105,23 +52,35 @@ TSharedPtr<FRpcValue> UKeyword::Run(
     check(KeywordClass);
     UKeyword* Keyword = NewObject<UKeyword>(GetTransientPackage(), KeywordClass);
 
-    // Generate Properties
+    // Find Properties via KeywordInformation and fill Values
     int32 ArgumentIndex = 0;
-    for (TFieldIterator<FProperty> Iter(KeywordClass); Iter; ++Iter, ++ArgumentIndex) {
-        if (!Iter->HasMetaData(TEXT("KeywordArgument"))) {
+    for (const FKeywordArgument& Argument : Keyword->GetKeywordInformation().Arguments) {
+        FProperty* Property = KeywordClass->FindPropertyByName(FName(*Argument.Name));
+
+        // Ensure Field exists if no default is given
+        if (!Property && Argument.DefaultValue == "") {
+            UE_LOG(
+                LogTemp, Error,
+                TEXT("Could not find Property '%s::%s', which doesn't have a default value"),
+                *Argument.Name, *KeywordClass->GetName()
+            )
             continue;
         }
 
-        if (!Arguments[ArgumentIndex]->ParseIntoProperty(*Iter, Iter->ContainerPtrToValuePtr<void>(Keyword))) {
+        // Parse Argument into Property
+        if (!Arguments[ArgumentIndex++]->ParseIntoProperty(Property, Property->ContainerPtrToValuePtr<void>(Keyword))) {
             UE_LOG(
-                LogTemp, Error, TEXT("Could not set property '%s' on '%s'"), *Iter->GetName(),
-                *KeywordClass->GetName()
+                LogTemp, Error, TEXT("Could not set property '%s' on '%s'"),
+                *Property->GetName(), *KeywordClass->GetName()
             )
         }
     }
 
     if (ArgumentIndex < Arguments.Num()) {
-        UE_LOG(LogTemp, Warning, TEXT("Could not process all given Arguments (got %d, processed %d)"), Arguments.Num(), ArgumentIndex)
+        UE_LOG(
+            LogTemp, Warning, TEXT("Could not process all given Arguments (got %d, processed %d)"),
+            Arguments.Num(), ArgumentIndex
+        )
     }
 
     // Execute Keyword

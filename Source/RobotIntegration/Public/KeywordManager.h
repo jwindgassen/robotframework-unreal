@@ -1,14 +1,14 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-
-
-class UKeyword;
-struct FRpcValue;
+#include "Keyword.h"
 
 
 class ROBOTINTEGRATION_API FKeywordManager {
-    TMap<FString, TSubclassOf<UKeyword>> Keywords;
+    using FKeywordCacheType = TTuple<TSubclassOf<UKeyword>, FKeywordInformation>;
+
+    // Store all known Keywords and their corresponding FKeywordInformation
+    TMap<FString, FKeywordCacheType> Keywords;
     
     static FKeywordManager* Instance;
     

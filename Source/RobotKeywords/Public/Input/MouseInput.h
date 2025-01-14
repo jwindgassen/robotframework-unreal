@@ -81,7 +81,7 @@ class ROBOTKEYWORDS_API UScrollOnElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    UPROPERTY(meta = (KeywordArgument))
+    UPROPERTY()
     double Delta = 2.5;
 
     virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override {

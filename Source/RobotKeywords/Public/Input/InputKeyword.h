@@ -14,7 +14,7 @@ class ROBOTKEYWORDS_API UInputKeyword : public UKeyword {
     GENERATED_BODY()
 
 public:
-    UPROPERTY(meta = (KeywordArgument))
+    UPROPERTY()
     FString Locator;
 
     virtual FKeywordResponse Execute() override;
