@@ -60,10 +60,13 @@ public class RobotKeywords : ModuleRules {
             new FileInfo(FilePath.Replace(Source, Destination)).IsReadOnly = false;
         }
         
-        // Delete AutomationDriver.Build.cs & remove IMPLEMENT_MODULE from AutomationDriverModule.cpp
+        // Delete AutomationDriver.Build.cs
         File.Delete(Path.Combine(Destination, "AutomationDriver.Build.cs"));
-        string ModuleFile = Path.Combine(Destination, "Private", "AutomationDriverModule.cpp");
-        string[] ModuleFileContent = File.ReadAllLines(ModuleFile);
-        File.WriteAllLines(ModuleFile, ModuleFileContent.SkipLast(2));
+        
+        // Remove contents in AutomationDriverModule.h / .cpp.
+        // We still need the files so includes aren't broken, but we cannot use the Module System
+        // We could keep the contents, but just making sure they aren't used accidentally
+        File.WriteAllText(Path.Combine(Destination, "Public", "IAutomationDriverModule.h"), "");
+        File.WriteAllText(Path.Combine(Destination, "Private", "AutomationDriverModule.cpp"), "");
     }
 }

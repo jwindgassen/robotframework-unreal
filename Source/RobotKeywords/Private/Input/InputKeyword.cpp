@@ -1,9 +1,19 @@
 ﻿#include "Input/InputKeyword.h"
 
+#include "AutomatedApplication.h"
+#include "AutomationDriver.h"
 #include "IAutomationDriver.h"
 #include "IAutomationDriverModule.h"
 #include "IDriverElement.h"
 #include "LocateBy.h"
+#include "PassThroughMessageHandler.h"
+
+
+// The Application the AutomationDriver will run on
+static TSharedPtr<GenericApplication> RealApplication;
+
+// Wrapper of RealApplication for forwarding input
+static TSharedPtr<FAutomatedApplication> AutomatedApplication;
 
 
 FKeywordResponse UInputKeyword::Execute() {
@@ -25,7 +35,20 @@ TSharedRef<IElementLocator> UInputKeyword::GetElementLocator() {
 }
 
 TSharedRef<IAutomationDriver> UInputKeyword::CreateDriver() {
-    IAutomationDriverModule::Get().Enable();
+    // We cannot use IAutomationDriverModule::Get(), so we do it manually
+    // See `FAutomationDriverModule::Enable()` in `AutomationDriverModule.cpp`
+    // ToDo: Also put Cleanup Code somewhere?
+    if (!AutomatedApplication.IsValid()) {
+        RealApplication = FSlateApplication::Get().GetPlatformApplication();
+        AutomatedApplication = FAutomatedApplicationFactory::Create(
+            RealApplication.ToSharedRef(), FPassThroughMessageHandlerFactoryFactory::Create()
+        );
 
-    return IAutomationDriverModule::Get().CreateDriver();
+        if (AutomatedApplication.IsValid()) {
+            FSlateApplication::Get().SetPlatformApplication(AutomatedApplication.ToSharedRef());
+            AutomatedApplication->AllowPlatformMessageHandling();
+        }
+    }
+
+    return FAutomationDriverFactory::Create(AutomatedApplication.ToSharedRef());
 }
