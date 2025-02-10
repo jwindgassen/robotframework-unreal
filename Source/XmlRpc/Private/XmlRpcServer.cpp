@@ -65,24 +65,36 @@ bool FXmlRpcServer::ProcessHttpRequest(const FHttpServerRequest& Request, const 
 
     const FString ProcedureName = XmlFile.GetRootNode()->FindChildNode("methodName")->GetContent();
     UE_LOG(LogXmlRpcServer, Log, TEXT("Trying to find remote procedure '%s'"), *ProcedureName)
-
-    TSharedPtr<FRpcMethodResponse> Result;
+    
     const FRemoteProcedure* Procedure = Procedures.Find(ProcedureName);
-    if (Procedure) {
-        const TArray<TSharedPtr<FRpcValue>> Arguments = ParseArguments(XmlFile.GetRootNode()->FindChildNode("params"));
-        Result = (*Procedure)(Arguments);
-    } else {
-        const FString ErrorMsg = FString::Printf(TEXT("Unknown Procedure: '%s'"), *ProcedureName);
-        UE_LOG(LogXmlRpcServer, Error, TEXT("%s"), *ErrorMsg)
-        Result = MakeShared<FRpcMethodResponse>(400, ErrorMsg);
+    const TArray<TSharedPtr<FRpcValue>> Arguments = ParseArguments(XmlFile.GetRootNode()->FindChildNode("params"));
+    TFuture<TSharedPtr<FRpcMethodResponse>> Result = ExecuteProcedure(Procedure, Arguments);
+
+    // Finish the Request when the future is fulfilled
+    Result.Next([OnComplete](const TSharedPtr<FRpcMethodResponse>& Response) {
+        const FString ResponseXml = Response->ParseToXmlString();
+        UE_LOG(LogXmlRpcServer, Verbose, TEXT("Response XML: '%s'"), *ResponseXml)
+
+        UE_LOG(LogXmlRpcServer, Log, TEXT("Finishing XmlRpc Request"))
+        OnComplete(FHttpServerResponse::Create(ResponseXml, "text/xml")); 
+    });
+    return true;
+}
+
+TFuture<TSharedPtr<FRpcMethodResponse>> FXmlRpcServer::ExecuteProcedure(
+    const FRemoteProcedure* Procedure, const TArray<TSharedPtr<FRpcValue>>& Arguments
+) {
+    if (!Procedure) {
+        UE_LOG(LogXmlRpcServer, Error, TEXT("Unknown Procedure"))
+        return MakeFulfilledPromise<TSharedPtr<FRpcMethodResponse>>(
+            MakeShared<FRpcMethodResponse>(400, TEXT("Unknown Procedure"))
+        ).GetFuture();
     }
 
-    const FString ResponseXml = Result->ParseToXmlString();
-    UE_LOG(LogXmlRpcServer, Verbose, TEXT("Response XML: '%s'"), *ResponseXml)
-
-    UE_LOG(LogXmlRpcServer, Log, TEXT("Finishing XmlRpc Request"))
-    OnComplete(FHttpServerResponse::Create(ResponseXml, "text/xml"));
-    return true;
+    // Execute Procedure in ThreadPool
+    return Async(EAsyncExecution::ThreadPool, [Procedure, Arguments]() {
+        return (*Procedure)(Arguments);
+    });
 }
 
 TArray<TSharedPtr<FRpcValue>> FXmlRpcServer::ParseArguments(const FXmlNode* Params) {

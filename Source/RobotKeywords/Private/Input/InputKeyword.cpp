@@ -39,13 +39,21 @@ TSharedRef<IAutomationDriver> UInputKeyword::CreateDriver() {
     // See `FAutomationDriverModule::Enable()` in `AutomationDriverModule.cpp`
     // ToDo: Also put Cleanup Code somewhere?
     if (!AutomatedApplication.IsValid()) {
-        RealApplication = FSlateApplication::Get().GetPlatformApplication();
+        // SlateApplication must be retrieved on the GameThread, so we will query it and wait
+        // We run on in the ThreadPool, so waiting should not be a problem
+        TPromise<FSlateApplication&> SlateApplicationFuture;
+        AsyncTask(ENamedThreads::GameThread, [&SlateApplicationFuture]() {
+            SlateApplicationFuture.SetValue(FSlateApplication::Get());
+        });
+        
+        FSlateApplication& SlateApplication = SlateApplicationFuture.GetFuture().Get();
+        RealApplication = SlateApplication.GetPlatformApplication();
         AutomatedApplication = FAutomatedApplicationFactory::Create(
             RealApplication.ToSharedRef(), FPassThroughMessageHandlerFactoryFactory::Create()
         );
 
         if (AutomatedApplication.IsValid()) {
-            FSlateApplication::Get().SetPlatformApplication(AutomatedApplication.ToSharedRef());
+            SlateApplication.SetPlatformApplication(AutomatedApplication.ToSharedRef());
             AutomatedApplication->AllowPlatformMessageHandling();
         }
     }

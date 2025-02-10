@@ -40,5 +40,9 @@ public:
 private:
     bool ProcessHttpRequest(const FHttpServerRequest& Request, const FHttpResultCallback& OnComplete);
 
+    TFuture<TSharedPtr<FRpcMethodResponse>> ExecuteProcedure(
+        const FRemoteProcedure* Procedure, const TArray<TSharedPtr<FRpcValue>>& Arguments
+    );
+
     TArray<TSharedPtr<FRpcValue>> ParseArguments(const class FXmlNode* Params);
 };

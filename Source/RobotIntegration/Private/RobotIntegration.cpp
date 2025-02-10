@@ -17,7 +17,8 @@ void FRobotIntegrationModule::StartupModule() {
     Server.Start();
 
     Server.RegisterProcedure("get_library_information", [](const TArray<TSharedPtr<FRpcValue>>&) {
-        return MakeShared<FRpcMethodResponse>(FKeywordManager::Get().LibraryInformation());
+        const auto Information = FKeywordManager::Get().LibraryInformation();
+        return MakeShared<FRpcMethodResponse>(Information);
     });
 
     Server.RegisterProcedure(
@@ -27,11 +28,12 @@ void FRobotIntegrationModule::StartupModule() {
                 Arguments.Num() >= 1 && Arguments[0]->IsString(),
                 TEXT("'run_keyword' need at least 1 String as Argument")
             )
+
+            const FString& KeywordName = Arguments[0]->GetString();
+            const FRpcValueList Args = Arguments.Num() == 2 ? Arguments[1]->GetList() : FRpcValueList{};
+            const auto Result = FKeywordManager::Get().Execute(KeywordName, Args);
             
-            return MakeShared<FRpcMethodResponse>(FKeywordManager::Get().Execute(
-                Arguments[0]->GetString(),
-                Arguments.Num() == 2 ? Arguments[1]->GetList() : TArray<TSharedPtr<FRpcValue>>{}
-            ));
+            return MakeShared<FRpcMethodResponse>(Result);
         }
     );
 }
