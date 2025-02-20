@@ -6,15 +6,94 @@
 
 
 UCLASS()
-class UEnterTextOnElementKeyword : public UInputKeyword {
+class UTypeTextOnElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
     UPROPERTY()
     FString Text;
 
-    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override {
-        Element->Type(Text);
-        return Success();
-    }
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override;
+};
+
+
+UCLASS()
+class UTypeKeyOnElementKeyword : public UInputKeyword {
+    GENERATED_BODY()
+
+public:
+    UPROPERTY()
+    FString KeyName;
+
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override;
+};
+
+
+UCLASS()
+class UTypeChordOnElementKeyword : public UInputKeyword {
+    GENERATED_BODY()
+
+public:
+    UPROPERTY()
+    TArray<FString> Keys;
+
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override;
+};
+
+
+/*************************************
+ *               Press               *
+ *************************************/
+
+
+UCLASS()
+class UPressKeyOnElementKeyword : public UInputKeyword {
+    GENERATED_BODY()
+
+public:
+    UPROPERTY()
+    FString KeyName;
+
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override;
+};
+
+
+UCLASS()
+class UPressChordOnElementKeyword : public UInputKeyword {
+    GENERATED_BODY()
+
+public:
+    UPROPERTY()
+    TArray<FString> Keys;
+
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override;
+};
+
+
+/*************************************
+ *              Release              *
+ *************************************/
+
+
+UCLASS()
+class UReleaseKeyOnElementKeyword : public UInputKeyword {
+    GENERATED_BODY()
+
+public:
+    UPROPERTY()
+    FString KeyName;
+
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override;
+};
+
+
+UCLASS()
+class UReleaseChordOnElementKeyword : public UInputKeyword {
+    GENERATED_BODY()
+
+public:
+    UPROPERTY()
+    TArray<FString> Keys;
+
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override;
 };

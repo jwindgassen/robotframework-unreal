@@ -106,6 +106,13 @@ protected:
 
     FKeywordResponse Error(const FString& Message);
 
+    template<typename FmtType, typename... Types>
+    FKeywordResponse LogErrorAndReturn(const FmtType& Fmt, Types... Args) {
+        Log("FAIL", Fmt, Forward<Types>(Args)...);
+        return Error(FString::Printf(Fmt, Forward<Types>(Args)...));
+    }
+    
+
 private:
     static TSharedPtr<FRpcValue> GenerateResponse(
         const FKeywordResponse& Response, const FStringBuilderBase& OutputBuilder
