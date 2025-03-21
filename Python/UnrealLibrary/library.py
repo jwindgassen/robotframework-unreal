@@ -1,62 +1,51 @@
-from subprocess import Popen
+import asyncio
+import socket
+import os
+from pathlib import Path
 
-from requests import ConnectionError, request
-from robot.api import logger
-from robot.api.deco import library
+from robot.api import logger as log
+from robot.api.deco import library, keyword
+from robot.libraries.BuiltIn import BuiltIn
 
 from ._version import __version__
-from .keywords import static_keywords
 
 
 @library(scope="GLOBAL", version=__version__, doc_format="reST", auto_keywords=False)
 class UnrealLibrary:
-    app_name: str
-    app_port: int
-    app_subprocess: Popen | None
+    @keyword("Start Unreal Application")
+    async def start_application(self, app_path: str | Path, port: int = 8270, uri_path: str = "/rpc", startup_delay: float = 5):
+        """
+        Starts the given Unreal Application and dynamically loads the keywords from it.
 
-    def __init__(self, app_name: str):
-        self.app_name = app_name
-        self.app_port = 0
-        self.app_subprocess = None
+        :param app_path: The path to the executable which should be started.
+        :param port: The port where the XML-RPC Server is listening on. 8270 by default.
+                     Set to 0 to use a random open port on this machine.
+        :param uri_path: The path where the XML-PRC Server is listening on. "/rpc" by default.
+        :param startup_delay: Delay (in seconds) to wait before the application has started and keywords can be loaded.
+        """
+        if port == 0:
+            with socket.socket() as s:
+                s.bind(("localhost", 0))
+                port = s.getsockname()[1]
 
-    def _fetch(self, method: str, path: str, *, params=None, data=None, headers=None, catch_error: bool = False):
-        url = f"http://localhost:{self.app_port}{path}"
-        logger.debug(f"Sending {method} request to {url!r}")
+        path = Path(app_path).resolve().absolute()
+        if not path.exists():
+            raise FileNotFoundError(f"Application path {str(path)} does not exist.")
 
-        try:
-            response = request(method, url, params=params, data=data, headers=headers, timeout=2.5)
-        except ConnectionError as e:
-            if catch_error:
-                logger.debug(f"Caught exception during request: {e}")
-                return None
+        # Start the application
+        # ToDo: Add --port argument
+        # ToDO: Use asyncio/Popen instead?
+        log.debug(f"Starting Unreal Application")
+        if os.name == "nt":
+            os.startfile(path)
+        elif os.name == "posix":
+            os.system(path)
 
-            raise
+        # Wait until reachable
+        log.debug(f"Waiting {startup_delay:.2f}s for the application to start.")
+        await asyncio.sleep(startup_delay)
 
-        logger.debug(f"Response status code: {response.status_code}")
-        return response.json()
-
-    def get_keyword_names(self) -> list[str]:
-        dynamic_keywords = self._fetch("GET", "/keywords/names", catch_error=True) or []
-
-        return dynamic_keywords + list(static_keywords.keys())
-
-    def get_keyword_arguments(self, name: str) -> list[str]:
-        if name in static_keywords:
-            return static_keywords[name].robot_types.keys()
-
-        return self._fetch("GET", "/keywords/arguments", params={"keyword": name})
-
-    def get_keyword_types(self, name: str) -> list[str]:
-        if name in static_keywords:
-            return static_keywords[name].robot_types.values()
-
-        return self._fetch("GET", "/keywords/types", params={"keyword": name})
-
-    def run_keyword(self, name: str, args, kwargs=None):
-        if kwargs is None:
-            kwargs = {}
-
-        if name in static_keywords:
-            static_keywords[name](*args, **kwargs)
-
-        self._fetch("POST", "/keywords/run", params={"keyword": name})
+        # Loading dynamic keywords from applicaiton
+        log.debug(f"Loading keywords from Unreal Application")
+        builtin = BuiltIn()
+        builtin.import_library("Remote", f"localhost:{port}{uri_path}")
