@@ -14,7 +14,7 @@ class ROBOTINTEGRATION_API ULocatorMarker : public UContentWidget {
     GENERATED_BODY()
 
 public:
-    UPROPERTY(EditAnywhere, Category="Content")
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Content")
     FName Id;
     
 protected:

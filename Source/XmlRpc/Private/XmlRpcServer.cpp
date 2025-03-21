@@ -2,6 +2,7 @@
 #include "HttpServerModule.h"
 #include "XmlFile.h"
 #include "IHttpRouter.h"
+#include "Misc/EngineVersionComparison.h"
 
 
 DEFINE_LOG_CATEGORY(LogXmlRpcServer)
@@ -25,9 +26,13 @@ bool FXmlRpcServer::Start(const FString& Path, const int32 Port) {
 
     RouteHandle = Router->BindRoute(
         Path, EHttpServerRequestVerbs::VERB_POST,
+#if UE_VERSION_OLDER_THAN(5, 4, 0)
         [this](const FHttpServerRequest& Request, const FHttpResultCallback& OnComplete) -> bool {
             return this->ProcessHttpRequest(Request, OnComplete);
         }
+#else
+        FHttpRequestHandler::CreateRaw(this, &FXmlRpcServer::ProcessHttpRequest)
+#endif
     );
     UE_LOG(LogXmlRpcServer, Log, TEXT("XmlRpc Route: %s"), *RouteHandle->Path)
 
