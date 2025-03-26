@@ -160,10 +160,26 @@ bool FRpcValue::ParseIntoProperty(FProperty* Property, void* PropertyValue) cons
     return false;
 }
 
+static TMap<FString, FString> XmlEscapes = {
+    {"&amp;", "&"},
+    {"&quot;", "\""},
+    {"&apos;", "'"},
+    {"&lt;", "<"},
+    {"&gt;", ">"},
+};
+
+FString UnescapeXml(FString Escaped) {
+    for (const auto& [Find, Replace] : XmlEscapes) {
+        Escaped = Escaped.Replace(*Find, *Replace);
+    }
+    return Escaped;
+}
+
 TSharedPtr<FRpcValue> FRpcValue::FromXml(const FXmlNode* ValueNode) {
     // If no type is defined, this is a String
     if (!ValueNode->GetFirstChildNode()) {
-        return MakeShared<FRpcValue>(ValueNode->GetContent());
+        FString Content = UnescapeXml(ValueNode->GetContent());
+        return MakeShared<FRpcValue>(Content);
     }
 
     const FString& Type = ValueNode->GetFirstChildNode()->GetTag();
@@ -179,7 +195,8 @@ TSharedPtr<FRpcValue> FRpcValue::FromXml(const FXmlNode* ValueNode) {
         return MakeShared<FRpcValue>(Content == "1");
     }
     if (Type == "string") {
-        return MakeShared<FRpcValue>(Content);
+        const FString& Unescaped = UnescapeXml(Content);
+        return MakeShared<FRpcValue>(Unescaped);
     }
     if (Type == "double") {
         return MakeShared<FRpcValue>(FPlatformString::Atod(*Content));
