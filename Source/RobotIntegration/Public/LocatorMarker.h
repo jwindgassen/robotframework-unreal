@@ -16,6 +16,9 @@ class ROBOTINTEGRATION_API ULocatorMarker : public UContentWidget {
 public:
     UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Content")
     FName Id;
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Content")
+    FName Tag;
     
 protected:
     virtual TSharedRef<SWidget> RebuildWidget() override;
