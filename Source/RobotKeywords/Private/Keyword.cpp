@@ -91,7 +91,7 @@ TSharedPtr<FRpcValue> UKeyword::Run(
 
 
 FKeywordResponse UKeyword::Success() {
-    return nullptr;
+    return MakeShared<FRpcValue>();
 }
 
 FKeywordResponse UKeyword::Success(const int32& Value) {

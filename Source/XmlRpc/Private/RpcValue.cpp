@@ -15,7 +15,7 @@ ERpcValueType FRpcValue::Type() const {
         case 7: return ERpcValueType::List;
         case 8: return ERpcValueType::Struct;
         default: {
-            _STL_UNREACHABLE;
+            UE_ASSUME(false);
         }
     }
 }
@@ -78,7 +78,7 @@ void FRpcValue::ParseIntoStringBuilder(FStringBuilderBase& Builder) const {
             break;
         }
         default: {
-            _STL_UNREACHABLE;
+            UE_ASSUME(false);
         }
     }
 
