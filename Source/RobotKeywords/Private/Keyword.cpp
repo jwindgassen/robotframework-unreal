@@ -138,13 +138,12 @@ TSharedPtr<FRpcValue> UKeyword::GenerateResponse(
     const bool Success = std::holds_alternative<TSharedPtr<FRpcValue>>(Response);
     Xml.Emplace("status", MakeShared<FRpcValue>(FString{Success ? "PASS" : "FAIL"}));
     Xml.Emplace("output", MakeShared<FRpcValue>(FString{OutputBuilder.ToString()}));
-
-    // ToDo: 
-    // if (Success) {
-    //     JsonBuilder.Appendf(TEXT("\"return\": \"%s\""))
-    // } else {
-    //     ...
-    // }
+    
+    if (Success) {
+        Xml.Emplace("return", std::get<TSharedPtr<FRpcValue>>(Response));
+    } else {
+        Xml.Emplace("error", MakeShared<FRpcValue>(std::get<FString>(Response)));
+    }
     
     return MakeShared<FRpcValue>(Xml);
 }

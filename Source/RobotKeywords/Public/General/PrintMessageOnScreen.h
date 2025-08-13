@@ -4,7 +4,7 @@
 #include "PrintMessageOnScreen.generated.h"
 
 UCLASS()
-class UPrintMessageOnScreenKeyword : public UKeyword {
+class ROBOTKEYWORDS_API UPrintMessageOnScreenKeyword : public UKeyword {
     GENERATED_BODY()
     
 public:

@@ -14,7 +14,7 @@ using FKeywordResponse = std::variant<TSharedPtr<FRpcValue>, FString>;
 
 
 USTRUCT()
-struct FKeywordArgument {
+struct ROBOTKEYWORDS_API FKeywordArgument {
     GENERATED_BODY()
 
     UPROPERTY()
@@ -29,7 +29,7 @@ struct FKeywordArgument {
 
 
 USTRUCT()
-struct FKeywordInformation {
+struct ROBOTKEYWORDS_API FKeywordInformation {
     GENERATED_BODY()
 
     UPROPERTY()

@@ -47,7 +47,7 @@ void FRpcValue::ParseIntoStringBuilder(FStringBuilderBase& Builder) const {
         case 0: Builder.Append("<nil/>"); break;
         case 1: Builder.Appendf(TEXT("<i4>%d</i4>"), GetInteger()); break;
         case 2: Builder.Appendf(TEXT("<double>%f</double>"), GetDouble()); break;
-        case 3: Builder.Appendf(TEXT("<bool>%s</bool>"), GetBoolean() ? TEXT("1") : TEXT("0")); break;
+        case 3: Builder.Appendf(TEXT("<boolean>%s</boolean>"), GetBoolean() ? TEXT("1") : TEXT("0")); break;
         case 4: Builder.Appendf(TEXT("<string>%s</string>"), *GetString()); break;
         case 5: {
             Builder.Appendf(TEXT("<dateTime.iso8601>%s</dateTime.iso8601>"), *GetDateTime().ToIso8601());
