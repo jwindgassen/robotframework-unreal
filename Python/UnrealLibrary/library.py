@@ -1,5 +1,4 @@
 import asyncio
-import io
 import socket
 import typing
 from pathlib import Path
@@ -11,7 +10,7 @@ from robot.libraries.BuiltIn import BuiltIn
 from ._version import __version__
 
 
-@library(scope="GLOBAL", version=__version__, doc_format="reST", auto_keywords=False)
+@library(scope="GLOBAL", version=__version__, doc_format="REST", auto_keywords=False)
 class UnrealLibrary:
     application_process: asyncio.subprocess.Process | None
 
@@ -51,13 +50,17 @@ class UnrealLibrary:
         return base / "application.log"
 
     @keyword("Start Unreal Application")
-    async def start_application(self, port: int = 8270, uri_path: str = "/rpc"):
+    async def start_application(
+            self, port: int = 8270, uri_path: str = "/rpc", build: bool = True, configuration: str = "Development"
+    ):
         """
         Starts the given Unreal Application and dynamically loads the keywords from it.
 
         :param port: The port where the XML-RPC Server is listening on. 8270 by default.
                      Set to 0 to use a random open port on this machine.
         :param uri_path: The path where the XML-PRC Server is listening on. "/rpc" by default.
+        :param build: Whether to build the application before running.
+        :param configuration: The configuration to use when building the application.
         """
         if port == 0:
             with socket.socket() as s:
@@ -71,13 +74,21 @@ class UnrealLibrary:
         log.info(f"Starting Unreal Application")
         log.info("<a href=\"application.log\">Application Log</a", html=True)
 
+        args = [
+            f"-project=\"{str(self.application_path)}\"",
+            "-run",
+        ]
+
+        if build:
+            args += [
+                "-build",
+                f"-configuration={configuration}",
+            ]
+
         # ToDo: Add --port argument
         self.application_process = await self.run_uat(
             "BuildCookRun",
-            [
-                f"-project=\"{str(self.application_path)}\"",
-                "-run",
-            ],
+            args,
             redirect_stdout=self.application_log_path,
             wait=False,
         )
@@ -103,8 +114,7 @@ class UnrealLibrary:
 
     @keyword("Run UAT")
     async def run_uat(
-            self, command: str, args: list[str] = [], redirect_stdout: str | Path | typing.Any = None,
-            wait: bool = True
+            self, command: str, args: list[str], redirect_stdout: str | Path | typing.Any = None, wait: bool = True
     ) -> asyncio.subprocess.Process | int:
         """
         Runs the Unreal Engine Automation Tool (UAT).
