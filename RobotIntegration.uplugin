@@ -21,6 +21,11 @@
 			"LoadingPhase": "Default"
 		},
 		{
+			"Name": "RobotIntegrationEditorExtension",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		},
+		{
 			"Name": "RobotKeywords",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
