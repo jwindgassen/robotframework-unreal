@@ -73,7 +73,7 @@ protected:
     template<typename FmtType, typename... Types>
     void Log(const FString& Level, const FmtType& Fmt, Types... Args) {
         const FString Message = FString::Printf(Fmt, Forward<Types>(Args)...);
-        OutputBuilder.Appendf(TEXT("*%s* %s\\n"), *Level, *Message);
+        OutputBuilder.Appendf(TEXT("*%s* %s\n"), *Level, *Message);
     }
 
     template<typename FmtType, typename... Types>

@@ -1,4 +1,6 @@
 ﻿#include "Keyword.h"
+#include "RobotKeywords.h"
+
 #include <variant>
 
 
@@ -23,7 +25,7 @@ FKeywordInformation UKeyword::GetKeywordInformation() const {
         FString* Type = CppTypesToRobotTypes.Find(Iter->GetCPPType(&InnerType));
         if (!Type) {
             UE_LOG(
-                LogTemp, Error, TEXT("Unknown Keyword Argument Type for Property '%s::%s'"),
+                LogRobotKeywords, Error, TEXT("Unknown Keyword Argument Type for Property '%s::%s'"),
                 *GetClass()->GetName(), *Iter->GetName()
             )
         }
@@ -50,6 +52,7 @@ TSharedPtr<FRpcValue> UKeyword::Run(
     const TSubclassOf<UKeyword> KeywordClass, const TArray<TSharedPtr<FRpcValue>>& Arguments
 ) {
     check(KeywordClass);
+    UE_LOG(LogRobotKeywords, Log, TEXT("Executing Keyword '%s'"), *KeywordClass->GetName())
     UKeyword* Keyword = NewObject<UKeyword>(GetTransientPackage(), KeywordClass);
 
     // Find Properties via KeywordInformation and fill Values
@@ -60,7 +63,7 @@ TSharedPtr<FRpcValue> UKeyword::Run(
         // Ensure Field exists if no default is given
         if (!Property && Argument.DefaultValue == "") {
             UE_LOG(
-                LogTemp, Error,
+                LogRobotKeywords, Error,
                 TEXT("Could not find Property '%s::%s', which doesn't have a default value"),
                 *Argument.Name, *KeywordClass->GetName()
             )
@@ -70,7 +73,7 @@ TSharedPtr<FRpcValue> UKeyword::Run(
         // Parse Argument into Property
         if (!Arguments[ArgumentIndex++]->ParseIntoProperty(Property, Property->ContainerPtrToValuePtr<void>(Keyword))) {
             UE_LOG(
-                LogTemp, Error, TEXT("Could not set property '%s' on '%s'"),
+                LogRobotKeywords, Error, TEXT("Could not set property '%s' on '%s'"),
                 *Property->GetName(), *KeywordClass->GetName()
             )
         }
@@ -78,13 +81,19 @@ TSharedPtr<FRpcValue> UKeyword::Run(
 
     if (ArgumentIndex < Arguments.Num()) {
         UE_LOG(
-            LogTemp, Warning, TEXT("Could not process all given Arguments (got %d, processed %d)"),
+            LogRobotKeywords, Warning, TEXT("Could not process all given Arguments (got %d, processed %d)"),
             Arguments.Num(), ArgumentIndex
         )
     }
 
     // Execute Keyword
+    const double StartTime = FGameTime::GetTimeSinceAppStart().GetRealTimeSeconds();
+    
     const auto Response = Keyword->Execute();
+    
+    const double ExecutionTime = FGameTime::GetTimeSinceAppStart().GetRealTimeSeconds() - StartTime;
+    UE_LOG(LogRobotKeywords, Log, TEXT("Keyword execution took %fs"), ExecutionTime)
+    Keyword->LogInfo(TEXT("Keyword execution took %fs"), ExecutionTime);
 
     return GenerateResponse(Response, Keyword->OutputBuilder);
 }

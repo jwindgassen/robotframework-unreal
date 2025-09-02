@@ -7,6 +7,7 @@
 #include "IDriverElement.h"
 #include "LocateBy.h"
 #include "PassThroughMessageHandler.h"
+#include "RobotKeywords.h"
 
 
 // The Application the AutomationDriver will run on
@@ -23,7 +24,7 @@ FKeywordResponse UInputKeyword::Execute() {
     const auto Element = Driver->FindElement(ElementLocator);
 
     if (!Element->Exists()) {
-        UE_LOG(LogTemp, Error, TEXT("Could not locate Element '%s'"), *Locator)
+        UE_LOG(LogRobotKeywords, Error, TEXT("Could not locate Element '%s'"), *Locator)
         return Error("Could not locate Element");
     }
 
