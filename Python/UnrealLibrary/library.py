@@ -49,9 +49,25 @@ class UnrealLibrary:
         base = Path(BuiltIn().get_variable_value("$OUTPUT_DIR", "."))
         return base / "application.log"
 
+    @keyword("Build Unreal Application")
+    async def build_application(self, configuration: str = "Development"):
+        """
+        Builds the Unreal Application so it can be started with ``Start Unreal Application``.
+
+        :param configuration: The configuration to use when building the application.
+        """
+        await self.run_uat(
+            "BuildCookRun",
+            [
+                f"-project=\"{str(self.application_path)}\"",
+                "-build",
+                f"-configuration={configuration}",
+            ]
+        )
+
     @keyword("Start Unreal Application")
     async def start_application(
-            self, port: int = 8270, uri_path: str = "/rpc", build: bool = True, configuration: str = "Development"
+            self, port: int = 8270, uri_path: str = "/rpc", run_args: list[str] | None = None
     ):
         """
         Starts the given Unreal Application and dynamically loads the keywords from it.
@@ -59,8 +75,7 @@ class UnrealLibrary:
         :param port: The port where the XML-RPC Server is listening on. 8270 by default.
                      Set to 0 to use a random open port on this machine.
         :param uri_path: The path where the XML-PRC Server is listening on. "/rpc" by default.
-        :param build: Whether to build the application before running.
-        :param configuration: The configuration to use when building the application.
+        :param run_args: Pass further arguments to the started application using "-AddCmdline".
         """
         if port == 0:
             with socket.socket() as s:
@@ -79,11 +94,8 @@ class UnrealLibrary:
             "-run",
         ]
 
-        if build:
-            args += [
-                "-build",
-                f"-configuration={configuration}",
-            ]
+        if run_args is not None:
+            args.append(f"-AddCmdline={' '.join(run_args)}")
 
         # ToDo: Add --port argument
         self.application_process = await self.run_uat(
@@ -121,7 +133,7 @@ class UnrealLibrary:
 
         :param command: The Command which should be executed (e.g., BuildCookRun).
         :param args: The Arguments to the Command (e.g., -Project=<path>).
-        :param redirect_stdout: Where the stdout should be written to. Can be the path to a file, an IO object, or None.
+        :param redirect_stdout: Where the stdout should be written to.
         :param wait: Should we wait until the UAT Command has been finished.
         :returns: If wait is true, returns the return code, otherwise the subprocess instance.
         """
