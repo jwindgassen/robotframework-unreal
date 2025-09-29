@@ -11,7 +11,7 @@
  *************************************/
 
 
-UCLASS()
+UCLASS(DisplayName="Hover Element")
 class ROBOTKEYWORDS_API UHoverElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
@@ -23,7 +23,7 @@ public:
 };
 
 
-UCLASS()
+UCLASS(DisplayName="Click Element")
 class ROBOTKEYWORDS_API UClickElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
@@ -35,7 +35,7 @@ public:
 };
 
 
-UCLASS()
+UCLASS(DisplayName="Double-click Element")
 class ROBOTKEYWORDS_API UDoubleClickElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
@@ -47,7 +47,7 @@ public:
 };
 
 
-UCLASS()
+UCLASS(DisplayName="Right-click Element")
 class ROBOTKEYWORDS_API URightClickElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
@@ -59,7 +59,7 @@ public:
 };
 
 
-UCLASS()
+UCLASS(DisplayName="Middle-click Element")
 class ROBOTKEYWORDS_API UMiddleClickElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
@@ -76,12 +76,12 @@ public:
  *************************************/
 
 
-UCLASS()
+UCLASS(DisplayName="Scroll on Element")
 class ROBOTKEYWORDS_API UScrollOnElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    UPROPERTY()
+    UPROPERTY(meta=(KeywordArgument))
     double Delta = 2.5;
 
     virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override {
@@ -91,7 +91,7 @@ public:
 };
 
 
-UCLASS()
+UCLASS(DisplayName="Scroll to Beginning of Element")
 class UScrollToBeginOfElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
@@ -103,7 +103,7 @@ public:
 };
 
 
-UCLASS()
+UCLASS(DisplayName="Scroll to End of Element")
 class UScrollToEndOfElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 

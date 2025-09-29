@@ -5,36 +5,36 @@
 #include "KeyboardInput.generated.h"
 
 
-UCLASS()
+UCLASS(DisplayName="Type Text on Element")
 class UTypeTextOnElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    UPROPERTY()
+    UPROPERTY(meta=(KeywordArgument))
     FString Text;
 
     virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override;
 };
 
 
-UCLASS()
+UCLASS(DisplayName="Type Key on Element")
 class UTypeKeyOnElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    UPROPERTY()
+    UPROPERTY(meta=(KeywordArgument))
     FString KeyName;
 
     virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override;
 };
 
 
-UCLASS()
+UCLASS(DisplayName="Type Chord on Element")
 class UTypeChordOnElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    UPROPERTY()
+    UPROPERTY(meta=(KeywordArgument))
     TArray<FString> Keys;
 
     virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override;
@@ -46,24 +46,24 @@ public:
  *************************************/
 
 
-UCLASS()
+UCLASS(DisplayName="Press Key on Element")
 class UPressKeyOnElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    UPROPERTY()
+    UPROPERTY(meta=(KeywordArgument))
     FString KeyName;
 
     virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override;
 };
 
 
-UCLASS()
+UCLASS(DisplayName="Press Chord on Element")
 class UPressChordOnElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    UPROPERTY()
+    UPROPERTY(meta=(KeywordArgument))
     TArray<FString> Keys;
 
     virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override;
@@ -75,24 +75,24 @@ public:
  *************************************/
 
 
-UCLASS()
+UCLASS(DisplayName="Release Key on Element")
 class UReleaseKeyOnElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    UPROPERTY()
+    UPROPERTY(meta=(KeywordArgument))
     FString KeyName;
 
     virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override;
 };
 
 
-UCLASS()
+UCLASS(DisplayName="Release Chord on Element")
 class UReleaseChordOnElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    UPROPERTY()
+    UPROPERTY(meta=(KeywordArgument))
     TArray<FString> Keys;
 
     virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override;

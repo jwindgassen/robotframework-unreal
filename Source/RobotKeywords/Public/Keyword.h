@@ -50,18 +50,16 @@ UCLASS(Abstract)
 class ROBOTKEYWORDS_API UKeyword : public UObject {
     GENERATED_BODY()
 
-    friend class UKeywordRunner;
-
     // Used to generate the output logs.
     FStringBuilderBase OutputBuilder;
 
 public:
-    virtual FKeywordInformation GetKeywordInformation() const;
-
     virtual FKeywordResponse Execute() {
         unimplemented();
         return Success();
     }
+
+    static FKeywordInformation GetKeywordInformation(TSubclassOf<UKeyword> KeywordClass);
 
     static TSharedPtr<FRpcValue> Run(TSubclassOf<UKeyword> KeywordClass, const TArray<TSharedPtr<FRpcValue>>& Arguments);
 

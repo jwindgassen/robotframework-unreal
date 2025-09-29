@@ -4,9 +4,11 @@
 #include <variant>
 
 
-FKeywordInformation UKeyword::GetKeywordInformation() const {
-    FString KeywordName = GetClass()->GetName();
-    KeywordName = KeywordName.Left(KeywordName.Len() - 7).TrimEnd();  // Remove Suffix
+FKeywordInformation UKeyword::GetKeywordInformation(const TSubclassOf<UKeyword> KeywordClass) {
+    checkf(
+        KeywordClass->HasMetaData(TEXT("DisplayName")), TEXT("Please provide a DisplayName for %s"),
+        *KeywordClass->GetName()
+    )
 
     static TMap<FString, FString> CppTypesToRobotTypes = {
         {"int32", "int"},
@@ -19,14 +21,18 @@ FKeywordInformation UKeyword::GetKeywordInformation() const {
     };
 
     TArray<FKeywordArgument> Arguments;
-    for (TFieldIterator<FProperty> Iter(GetClass()); Iter; ++Iter) {
+    for (TFieldIterator<FProperty> Iter(KeywordClass); Iter; ++Iter) {
+        if (!Iter->HasMetaData(TEXT("KeywordArgument"))) {
+            continue;
+        }
+
         // Determine Type
         FString InnerType;
         FString* Type = CppTypesToRobotTypes.Find(Iter->GetCPPType(&InnerType));
         if (!Type) {
             UE_LOG(
                 LogRobotKeywords, Error, TEXT("Unknown Keyword Argument Type for Property '%s::%s'"),
-                *GetClass()->GetName(), *Iter->GetName()
+                *KeywordClass->GetName(), *Iter->GetName()
             )
         }
 
@@ -38,12 +44,15 @@ FKeywordInformation UKeyword::GetKeywordInformation() const {
         // ToDo: Default Values
         Arguments.Emplace(Iter->GetName(), *Type, "");
     }
-    
+
+    TArray<FString> Tags;
+    KeywordClass->GetMetaData(TEXT("KeywordTags")).ParseIntoArray(Tags, TEXT(","));
+
     return {
-        .Name = KeywordName,
+        .Name = KeywordClass->GetDisplayNameText().ToString(),
         .Arguments = Arguments,
-        .Documentation = "",
-        .Tags = {},
+        .Documentation = KeywordClass->GetToolTipText().ToString(),
+        .Tags = Tags,
     };
 }
 
@@ -57,24 +66,16 @@ TSharedPtr<FRpcValue> UKeyword::Run(
 
     // Find Properties via KeywordInformation and fill Values
     int32 ArgumentIndex = 0;
-    for (const FKeywordArgument& Argument : Keyword->GetKeywordInformation().Arguments) {
-        FProperty* Property = KeywordClass->FindPropertyByName(FName(*Argument.Name));
-
-        // Ensure Field exists if no default is given
-        if (!Property && Argument.DefaultValue == "") {
-            UE_LOG(
-                LogRobotKeywords, Error,
-                TEXT("Could not find Property '%s::%s', which doesn't have a default value"),
-                *Argument.Name, *KeywordClass->GetName()
-            )
+    for (TFieldIterator<FProperty> Iter(KeywordClass); Iter; ++Iter) {
+        if (!Iter->HasMetaData(TEXT("KeywordArgument"))) {
             continue;
         }
 
         // Parse Argument into Property
-        if (!Arguments[ArgumentIndex++]->ParseIntoProperty(Property, Property->ContainerPtrToValuePtr<void>(Keyword))) {
+        if (!Arguments[ArgumentIndex++]->ParseIntoProperty(*Iter, Iter->ContainerPtrToValuePtr<void>(Keyword))) {
             UE_LOG(
                 LogRobotKeywords, Error, TEXT("Could not set property '%s' on '%s'"),
-                *Property->GetName(), *KeywordClass->GetName()
+                *Iter->GetName(), *KeywordClass->GetName()
             )
         }
     }
@@ -147,12 +148,12 @@ TSharedPtr<FRpcValue> UKeyword::GenerateResponse(
     const bool Success = std::holds_alternative<TSharedPtr<FRpcValue>>(Response);
     Xml.Emplace("status", MakeShared<FRpcValue>(FString{Success ? "PASS" : "FAIL"}));
     Xml.Emplace("output", MakeShared<FRpcValue>(FString{OutputBuilder.ToString()}));
-    
+
     if (Success) {
         Xml.Emplace("return", std::get<TSharedPtr<FRpcValue>>(Response));
     } else {
         Xml.Emplace("error", MakeShared<FRpcValue>(std::get<FString>(Response)));
     }
-    
+
     return MakeShared<FRpcValue>(Xml);
 }

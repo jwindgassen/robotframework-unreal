@@ -14,9 +14,9 @@ FKeywordManager::FKeywordManager() {
     });
     
     for (auto* Class : Classes) {
-        const UKeyword* Keyword = NewObject<UKeyword>(GetTransientPackage(), Class);
-        FKeywordCacheType Cache = MakeTuple(Class, Keyword->GetKeywordInformation());
-        Keywords.Emplace(Keyword->GetKeywordInformation().Name, Cache);
+        const FKeywordInformation Information = UKeyword::GetKeywordInformation(Class);
+        FKeywordCacheType Cache = MakeTuple(Class, Information);
+        Keywords.Emplace(Information.Name, Cache);
     }
 }
 
