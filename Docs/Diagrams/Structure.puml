@@ -1,0 +1,38 @@
+﻿@startuml component
+'https://plantuml.com/component-diagram
+
+!theme sunlust
+skinparam BackgroundColor transparent
+
+title "UnrealLibrary Architecture Overview"
+
+component "Python Interpreter" as Python
+Python -> Tests : Executes
+
+node Tests {
+    file "TestSuite.robot" as Suite
+    file "tests.resource" as Resource
+
+    Suite ..> Resource : Can include
+}
+
+component UnrealLibrary {
+    component RemoteLibrary <<builtin>>
+}
+Suite -> UnrealLibrary : Uses
+
+node Application {
+    component "XML-RPC Server" as Server
+    component Keywords
+    component "Other Modules" as Other
+    rectangle "Scene and \nUser Interface" as Scene
+
+    Server -> Keywords : Executes
+    Keywords <-> Scene : Interact / Query
+    Other .up.> Keywords : Can extend
+}
+
+UnrealLibrary --> Application : Starts
+RemoteLibrary <..> Server : XML-RPC via HTTP
+
+@enduml

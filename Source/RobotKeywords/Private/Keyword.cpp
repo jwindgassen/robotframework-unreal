@@ -74,8 +74,8 @@ TSharedPtr<FRpcValue> UKeyword::Run(
         // Parse Argument into Property
         if (!Arguments[ArgumentIndex++]->ParseIntoProperty(*Iter, Iter->ContainerPtrToValuePtr<void>(Keyword))) {
             UE_LOG(
-                LogRobotKeywords, Error, TEXT("Could not set property '%s' on '%s'"),
-                *Iter->GetName(), *KeywordClass->GetName()
+                LogRobotKeywords, Error, TEXT("Could not set property '%s' on '%s'"), *Iter->GetName(),
+                *KeywordClass->GetName()
             )
         }
     }
@@ -89,9 +89,9 @@ TSharedPtr<FRpcValue> UKeyword::Run(
 
     // Execute Keyword
     const double StartTime = FGameTime::GetTimeSinceAppStart().GetRealTimeSeconds();
-    
+
     const auto Response = Keyword->Execute();
-    
+
     const double ExecutionTime = FGameTime::GetTimeSinceAppStart().GetRealTimeSeconds() - StartTime;
     UE_LOG(LogRobotKeywords, Log, TEXT("Keyword execution took %fs"), ExecutionTime)
     Keyword->LogInfo(TEXT("Keyword execution took %fs"), ExecutionTime);

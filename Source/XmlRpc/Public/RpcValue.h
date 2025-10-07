@@ -25,6 +25,12 @@ enum class ERpcValueType : uint8 { Integer, Double, Boolean, String, DateTime, B
     }
 
 
+/**
+ * A struct containing the value of an RPC argument using a Variant.
+ *
+ * Values can be received by their respective getters. You must ensure the value is actually of the
+ * desired type before getting the value!
+ */
 USTRUCT()
 struct XMLRPC_API FRpcValue {
     GENERATED_BODY()
@@ -75,12 +81,22 @@ public:
         return Value.TryGet<T>();
     }
 
+    /// Parses the value into an XML Node
     FXmlNode* ParseToXml() const;
 
+    /// Parses the value into an XML string
     FString ParseToXmlString() const;
 
+    /**
+     * Tries to fill the property of an object with the value.
+     *
+     * @param Property The property to fill
+     * @param PropertyValue The object that has the property
+     * @return Whether the value could be parsed into the object
+     */
     bool ParseIntoProperty(FProperty* Property, void* PropertyValue) const;
 
+    /// Parses an XML Node into a PRC Value. Returns nullptr when invalid/unsupported XML
     static TSharedPtr<FRpcValue> FromXml(const FXmlNode* ValueNode);
 
 private:
@@ -91,6 +107,12 @@ private:
 #undef RPC_VALUE_DEFINE_TYPE
 
 
+/**
+ * Response from a remote procedure.
+ *
+ * Either an RPC Value to be returned when the remote procedure was successful or a tuple
+ * of error code and message when it was erroneous.
+ */
 USTRUCT()
 struct XMLRPC_API FRpcMethodResponse {
     GENERATED_BODY()

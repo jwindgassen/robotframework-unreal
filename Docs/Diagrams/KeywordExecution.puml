@@ -1,0 +1,51 @@
+@startuml
+
+!theme sunlust
+skinparam style strictuml
+autoactivate on
+
+title "Sequence Diagram for Keyword Execution"
+
+box GameThread
+    participant "HTTP Server" as HTTP
+    participant Executor
+end box
+
+box ThreadPool
+    participant "Robot Integration" as Robot
+    participant Keyword
+    participant "Automation Driver" as Driver
+end box
+
+' Incoming Request
+[-> HTTP : "run_keyword"
+HTTP -> HTTP : Parse request
+return name, args
+HTTP -> Robot : KeywordManager::Execute(name, args)
+Robot -> Keyword ** : Create Keyword
+Robot -> Keyword : Execute(args)
+
+' Create Keyword and locate Element
+Keyword -> Driver ** : Create Driver
+Keyword -> Driver : FindElement(locator)
+return element
+
+' Perform Action on Element
+Keyword -> Driver : element.Click()
+Driver ->> Executor ** <<schedule>>: Perform()
+activate Executor
+return success
+return success
+destroy Driver
+
+' Generate Response
+Keyword -> Keyword : GenerateResponse(success)
+return response
+return response
+destroy Keyword
+
+' Finish Request
+return response
+[<- HTTP -- : response
+
+@enduml

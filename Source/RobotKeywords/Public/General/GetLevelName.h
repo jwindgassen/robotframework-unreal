@@ -4,10 +4,11 @@
 #include "GetLevelName.generated.h"
 
 
-UCLASS(DisplayName="Get Level Name")
+/// Returns the name of the level currently open in the World
+UCLASS(DisplayName = "Get Level Name")
 class ROBOTKEYWORDS_API UGetLevelNameKeyword : public UKeyword {
     GENERATED_BODY()
-    
+
 public:
     virtual FKeywordResponse Execute() override;
 };
