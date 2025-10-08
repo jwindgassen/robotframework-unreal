@@ -1,8 +1,8 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
-#include "HttpRouteHandle.h"
 #include "RpcValue.h"
+#include "HttpTransport.h"
 #include "XmlRpcServer.generated.h"
 
 
@@ -32,10 +32,10 @@ struct XMLRPC_API FXmlRpcServer {
 
 private:
     /// Underlying HTTP Router
-    TSharedPtr<class IHttpRouter> Router;
+    TSharedPtr<FAsyncHttpTransport> Transport;
 
-    /// Handle to the Route we are listening on
-    FHttpRouteHandle RouteHandle;
+    /// Thread the Transport is running on
+    FRunnableThread* TransportThread = nullptr;
 
     /// Available Procedures to call. Key is the Name the Function was registered with
     TMap<FString, FRemoteProcedure> Procedures;
@@ -71,7 +71,7 @@ private:
      * Parses the HTTP Request into XML, calls the corresponding procedure (if there is one for this request)
      * and completes the request with the generated XML response.
      */
-    bool ProcessHttpRequest(const FHttpServerRequest& Request, const FHttpResultCallback& OnComplete);
+    FResponse ProcessHttpRequest(const FRequest& Request);
 
     /// Executes a remote procedure on a background tread
     TFuture<TSharedPtr<FRpcMethodResponse>> ExecuteProcedure(

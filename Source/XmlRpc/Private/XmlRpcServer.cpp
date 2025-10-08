@@ -1,8 +1,5 @@
 ﻿#include "XmlRpcServer.h"
-#include "HttpServerModule.h"
 #include "XmlFile.h"
-#include "IHttpRouter.h"
-#include "Misc/EngineVersionComparison.h"
 
 
 DEFINE_LOG_CATEGORY(LogXmlRpcServer)
@@ -11,32 +8,37 @@ DEFINE_LOG_CATEGORY(LogXmlRpcServer)
 bool FXmlRpcServer::Start(const FString& Path, const int32 Port) {
     UE_LOG(LogXmlRpcServer, Log, TEXT("Starting XmlRpcServer"))
 
-    if (RouteHandle) {
-        UE_LOG(LogXmlRpcServer, Warning, TEXT("XmlRpcServer already running"))
-        return true;
-    }
+//     if (RouteHandle) {
+//         UE_LOG(LogXmlRpcServer, Warning, TEXT("XmlRpcServer already running"))
+//         return true;
+//     }
+//
+//     FHttpServerModule& HttpServerModule = FHttpServerModule::Get();
+//
+//     Router = HttpServerModule.GetHttpRouter(Port);
+//     if (!Router) {
+//         UE_LOG(LogXmlRpcServer, Error, TEXT("Could not create HTTP Router on Port %d"), Port)
+//         return false;
+//     }
+//
+//     RouteHandle = Router->BindRoute(
+//         Path, EHttpServerRequestVerbs::VERB_POST,
+// #if UE_VERSION_OLDER_THAN(5, 4, 0)
+//         [this](const FHttpServerRequest& Request, const FHttpResultCallback& OnComplete) -> bool {
+//             return this->ProcessHttpRequest(Request, OnComplete);
+//         }
+// #else
+//         FHttpRequestHandler::CreateRaw(this, &FXmlRpcServer::ProcessHttpRequest)
+// #endif
+//     );
+//     UE_LOG(LogXmlRpcServer, Log, TEXT("XmlRpc Route: %s"), *RouteHandle->Path)
+//
+//     HttpServerModule.StartAllListeners();
+    Transport = MakeShared<FAsyncHttpTransport>(Path, Port);
+    Transport->OnReceivedRequest.BindRaw(this, &FXmlRpcServer::ProcessHttpRequest);
 
-    FHttpServerModule& HttpServerModule = FHttpServerModule::Get();
+    TransportThread = FRunnableThread::Create(Transport.Get(), TEXT("XML-RPC Server"));
 
-    Router = HttpServerModule.GetHttpRouter(Port);
-    if (!Router) {
-        UE_LOG(LogXmlRpcServer, Error, TEXT("Could not create HTTP Router on Port %d"), Port)
-        return false;
-    }
-
-    RouteHandle = Router->BindRoute(
-        Path, EHttpServerRequestVerbs::VERB_POST,
-#if UE_VERSION_OLDER_THAN(5, 4, 0)
-        [this](const FHttpServerRequest& Request, const FHttpResultCallback& OnComplete) -> bool {
-            return this->ProcessHttpRequest(Request, OnComplete);
-        }
-#else
-        FHttpRequestHandler::CreateRaw(this, &FXmlRpcServer::ProcessHttpRequest)
-#endif
-    );
-    UE_LOG(LogXmlRpcServer, Log, TEXT("XmlRpc Route: %s"), *RouteHandle->Path)
-
-    HttpServerModule.StartAllListeners();
     return true;
 }
 
@@ -47,25 +49,24 @@ void FXmlRpcServer::RegisterProcedure(FString Name, FRemoteProcedure Procedure) 
 void FXmlRpcServer::Stop() const {
     UE_LOG(LogXmlRpcServer, Log, TEXT("Stopping XmlRpcServer"))
 
-    if (RouteHandle.IsValid()) {
-        Router->UnbindRoute(RouteHandle);
+    if (TransportThread) {
+        TransportThread->Kill(false);
     }
+    // if (RouteHandle.IsValid()) {
+    //     Router->UnbindRoute(RouteHandle);
+    // }
 }
 
-bool FXmlRpcServer::ProcessHttpRequest(const FHttpServerRequest& Request, const FHttpResultCallback& OnComplete) {
-    // Convert body to text
-    TArray RequestBody{Request.Body, 1};
-    RequestBody.Add(0);  // Add Null-Terminator
-    const FString XmlText = UTF8_TO_TCHAR(RequestBody.GetData());
-    UE_LOG(LogXmlRpcServer, Verbose, TEXT("Received XML-RPC: '%s'"), *XmlText)
+FResponse FXmlRpcServer::ProcessHttpRequest(const FRequest& Request) {
+    UE_LOG(LogXmlRpcServer, Verbose, TEXT("Received XML-RPC: '%s'"), *Request.Body)
 
     // Parse XML from body
-    const FXmlFile XmlFile{XmlText, EConstructMethod::ConstructFromBuffer};
+    const FXmlFile XmlFile{Request.Body, EConstructMethod::ConstructFromBuffer};
     if (!XmlFile.IsValid()) {
         UE_LOG(LogXmlRpcServer, Error, TEXT("Could not parse XML from Request Body: %s"), *XmlFile.GetLastError())
 
-        OnComplete(FHttpServerResponse::Error(EHttpServerResponseCodes::BadRequest, TEXT(""), TEXT("Invalid XML")));
-        return false;
+        FString Error = FString::Printf(TEXT("Invalid XML: %s"), *XmlFile.GetLastError());
+        return FResponse(400, Error, "text/plain");
     }
 
     const FString ProcedureName = XmlFile.GetRootNode()->FindChildNode("methodName")->GetContent();
@@ -73,17 +74,14 @@ bool FXmlRpcServer::ProcessHttpRequest(const FHttpServerRequest& Request, const 
     
     const FRemoteProcedure* Procedure = Procedures.Find(ProcedureName);
     const TArray<TSharedPtr<FRpcValue>> Arguments = ParseArguments(XmlFile.GetRootNode()->FindChildNode("params"));
-    TFuture<TSharedPtr<FRpcMethodResponse>> Result = ExecuteProcedure(Procedure, Arguments);
+    TSharedPtr<FRpcMethodResponse> Result = ExecuteProcedure(Procedure, Arguments).Get();
 
     // Finish the Request when the future is fulfilled
-    Result.Next([OnComplete](const TSharedPtr<FRpcMethodResponse>& Response) {
-        const FString ResponseXml = Response->ParseToXmlString();
-        UE_LOG(LogXmlRpcServer, Verbose, TEXT("Response XML: '%s'"), *ResponseXml)
+    const FString ResponseXml = Result->ParseToXmlString();
+    UE_LOG(LogXmlRpcServer, Verbose, TEXT("Response XML: '%s'"), *ResponseXml)
 
-        UE_LOG(LogXmlRpcServer, Log, TEXT("Finishing XmlRpc Request"))
-        OnComplete(FHttpServerResponse::Create(ResponseXml, "text/xml")); 
-    });
-    return true;
+    UE_LOG(LogXmlRpcServer, Log, TEXT("Finishing XmlRpc Request"))
+    return FResponse(200, ResponseXml, "text/xml");
 }
 
 TFuture<TSharedPtr<FRpcMethodResponse>> FXmlRpcServer::ExecuteProcedure(
