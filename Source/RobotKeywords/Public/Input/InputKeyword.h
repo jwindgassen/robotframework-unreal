@@ -36,5 +36,6 @@ public:
     }
 
 protected:
-    static TSharedRef<IAutomationDriver> CreateDriver();
+    TSharedRef<IAutomationDriver> CreateDriver();
+    void CleanupDriver();
 };

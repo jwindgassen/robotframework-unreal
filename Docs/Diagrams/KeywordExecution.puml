@@ -4,17 +4,16 @@
 skinparam style strictuml
 autoactivate on
 
-title "Sequence Diagram for Keyword Execution"
+title "Sequence Diagram for InputKeyword Execution"
 
 box GameThread
-    participant "HTTP Server" as HTTP
-    participant Executor
+    participant "XML-RPC Server" as HTTP
+    participant "Automation Driver" as Driver
 end box
 
 box ThreadPool
     participant "Robot Integration" as Robot
-    participant Keyword
-    participant "Automation Driver" as Driver
+    participant "InputKeyword" as Keyword
 end box
 
 ' Incoming Request
@@ -26,14 +25,14 @@ Robot -> Keyword ** : Create Keyword
 Robot -> Keyword : Execute(args)
 
 ' Create Keyword and locate Element
-Keyword -> Driver ** : Create Driver
+Keyword -> Driver ** : CreateDriver()
+Driver --> Keyword : driver
 Keyword -> Driver : FindElement(locator)
 return element
 
 ' Perform Action on Element
-Keyword -> Driver : element.Click()
-Driver ->> Executor ** <<schedule>>: Perform()
-activate Executor
+Keyword -> Driver : Click()
+Driver ->> Driver : Perform()
 return success
 return success
 destroy Driver
@@ -41,11 +40,13 @@ destroy Driver
 ' Generate Response
 Keyword -> Keyword : GenerateResponse(success)
 return response
-return response
+Keyword --> Robot : response
 destroy Keyword
+Robot --> HTTP : response
 
 ' Finish Request
-return response
-[<- HTTP -- : response
+HTTP -> HTTP : Parse response
+return xmlResponse
+[<- HTTP -- : xmlResponse
 
 @enduml

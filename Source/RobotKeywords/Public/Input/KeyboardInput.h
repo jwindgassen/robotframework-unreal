@@ -1,7 +1,6 @@
 ﻿#pragma once
 
-#include "IDriverElement.h"
-#include "Input/InputKeyword.h"
+#include "InputKeyword.h"
 #include "KeyboardInput.generated.h"
 
 

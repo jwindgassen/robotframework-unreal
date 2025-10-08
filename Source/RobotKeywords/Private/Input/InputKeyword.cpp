@@ -1,34 +1,31 @@
 ﻿#include "Input/InputKeyword.h"
 
-#include "AutomatedApplication.h"
-#include "AutomationDriver.h"
-#include "IAutomationDriver.h"
 #include "IAutomationDriverModule.h"
+#include "IAutomationDriver.h"
 #include "IDriverElement.h"
 #include "LocateBy.h"
-#include "PassThroughMessageHandler.h"
 #include "RobotKeywords.h"
 
 
-// The Application the AutomationDriver will run on
-static TSharedPtr<GenericApplication> RealApplication;
-
-// Wrapper of RealApplication for forwarding input
-static TSharedPtr<FAutomatedApplication> AutomatedApplication;
-
-
 FKeywordResponse UInputKeyword::Execute() {
-    const auto Driver = CreateDriver();
+    // Create the Driver and Locator
+    const TSharedRef<IAutomationDriver> Driver = CreateDriver();
+    const TSharedRef<IElementLocator> ElementLocator = GetElementLocator();
 
-    const auto ElementLocator = GetElementLocator();
-    const auto Element = Driver->FindElement(ElementLocator);
+    // Locate the element
+    const TSharedRef<IDriverElement> Element = Driver->FindElement(ElementLocator);
 
     if (!Element->Exists()) {
         UE_LOG(LogRobotKeywords, Error, TEXT("Could not locate Element '%s'"), *Locator)
         return Error("Could not locate Element");
     }
 
-    return PerformAction(Element);
+    // Perform an action on the element
+    FKeywordResponse Response = PerformAction(Element);
+
+    CleanupDriver();
+
+    return Response;
 }
 
 TSharedRef<IElementLocator> UInputKeyword::GetElementLocator() {
@@ -36,28 +33,21 @@ TSharedRef<IElementLocator> UInputKeyword::GetElementLocator() {
 }
 
 TSharedRef<IAutomationDriver> UInputKeyword::CreateDriver() {
-    // We cannot use IAutomationDriverModule::Get(), so we do it manually
-    // See `FAutomationDriverModule::Enable()` in `AutomationDriverModule.cpp`
-    // ToDo: Also put Cleanup Code somewhere?
-    if (!AutomatedApplication.IsValid()) {
-        // SlateApplication must be retrieved on the GameThread, so we will query it and wait
-        // We run on in the ThreadPool, so waiting should not be a problem
-        TPromise<FSlateApplication&> SlateApplicationFuture;
-        AsyncTask(ENamedThreads::GameThread, [&SlateApplicationFuture]() {
-            SlateApplicationFuture.SetValue(FSlateApplication::Get());
-        });
-        
-        FSlateApplication& SlateApplication = SlateApplicationFuture.GetFuture().Get();
-        RealApplication = SlateApplication.GetPlatformApplication();
-        AutomatedApplication = FAutomatedApplicationFactory::Create(
-            RealApplication.ToSharedRef(), FPassThroughMessageHandlerFactoryFactory::Create()
-        );
+    // Module initialization and driver creation must be executed on the GameThread.
+    // Since this is executed on the ThreadPool, we can just wait for it to finish
+    return Async(EAsyncExecution::TaskGraphMainThread, []() {
+        // Enable simulated input
+        IAutomationDriverModule& AutomationDriverModule = IAutomationDriverModule::Get();
+        AutomationDriverModule.Enable();
 
-        if (AutomatedApplication.IsValid()) {
-            SlateApplication.SetPlatformApplication(AutomatedApplication.ToSharedRef());
-            AutomatedApplication->AllowPlatformMessageHandling();
-        }
-    }
+        // Create the Driver and Locate the Element
+        return AutomationDriverModule.CreateDriver();
+    }).Get();
+}
 
-    return FAutomationDriverFactory::Create(AutomatedApplication.ToSharedRef());
+void UInputKeyword::CleanupDriver() {
+    Async(EAsyncExecution::TaskGraphMainThread, []() {
+        // Disable simulated input
+        IAutomationDriverModule::Get().Disable();
+    }).Wait();
 }

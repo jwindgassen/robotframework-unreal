@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#include "CoreMinimal.h"
-#include "IDriverElement.h"
 #include "InputKeyword.h"
 #include "MouseInput.generated.h"
 
@@ -17,10 +15,7 @@ class ROBOTKEYWORDS_API UHoverElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override {
-        Element->Hover();
-        return Success();
-    }
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override;
 };
 
 
@@ -30,10 +25,7 @@ class ROBOTKEYWORDS_API UClickElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override {
-        Element->Click();
-        return Success();
-    }
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override;
 };
 
 
@@ -43,10 +35,7 @@ class ROBOTKEYWORDS_API UDoubleClickElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override {
-        Element->DoubleClick();
-        return Success();
-    }
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override;
 };
 
 
@@ -56,10 +45,7 @@ class ROBOTKEYWORDS_API URightClickElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override {
-        Element->Click(EMouseButtons::Right);
-        return Success();
-    }
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override;
 };
 
 
@@ -69,10 +55,7 @@ class ROBOTKEYWORDS_API UMiddleClickElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override {
-        Element->Click(EMouseButtons::Middle);
-        return Success();
-    }
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override;
 };
 
 
@@ -90,10 +73,7 @@ public:
     UPROPERTY(meta = (KeywordArgument))
     double Delta = 2.5;
 
-    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override {
-        Element->ScrollBy(Delta);
-        return Success();
-    }
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override;
 };
 
 
@@ -103,10 +83,7 @@ class UScrollToBeginOfElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override {
-        Element->ScrollToBeginning();
-        return Success();
-    }
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override;
 };
 
 
@@ -116,8 +93,5 @@ class UScrollToEndOfElementKeyword : public UInputKeyword {
     GENERATED_BODY()
 
 public:
-    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override {
-        Element->ScrollToEnd();
-        return Success();
-    }
+    virtual FKeywordResponse PerformAction(TSharedRef<IDriverElement> Element) override;
 };
