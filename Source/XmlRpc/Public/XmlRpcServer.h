@@ -73,11 +73,11 @@ private:
      */
     bool ProcessHttpRequest(const FHttpServerRequest& Request, const FHttpResultCallback& OnComplete);
 
+    /// Parses the HTTP Request into the procedure name and the arguments
+    bool ParseRequest(const FHttpServerRequest& Request, FString& Name, TArray<TSharedPtr<FRpcValue>>& Arguments);
+    
     /// Executes a remote procedure on a background tread
     TFuture<TSharedPtr<FRpcMethodResponse>> ExecuteProcedure(
         const FRemoteProcedure* Procedure, const TArray<TSharedPtr<FRpcValue>>& Arguments
     );
-
-    /// Parses the arguments of the RPC from XML
-    TArray<TSharedPtr<FRpcValue>> ParseArguments(const class FXmlNode* Params);
 };

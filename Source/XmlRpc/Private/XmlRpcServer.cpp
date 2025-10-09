@@ -53,6 +53,35 @@ void FXmlRpcServer::Stop() const {
 }
 
 bool FXmlRpcServer::ProcessHttpRequest(const FHttpServerRequest& Request, const FHttpResultCallback& OnComplete) {
+    FString ProcedureName;
+    TArray<TSharedPtr<FRpcValue>> Arguments;
+    if (!ParseRequest(Request, ProcedureName, Arguments)) {
+        OnComplete(FHttpServerResponse::Error(
+            EHttpServerResponseCodes::BadRequest, TEXT("Bad Request"), TEXT("Invalid XML. Could not parse the request")
+        ));
+        return false;
+    }
+
+    UE_LOG(LogXmlRpcServer, Log, TEXT("Trying to find remote procedure '%s'"), *ProcedureName)
+    const FRemoteProcedure* Procedure = Procedures.Find(ProcedureName);
+
+    UE_LOG(LogXmlRpcServer, Verbose, TEXT("Executing remote Procedure"))
+    TFuture<TSharedPtr<FRpcMethodResponse>> Result = ExecuteProcedure(Procedure, Arguments);
+
+    // Finish the Request when the future is fulfilled
+    Result.Next([OnComplete](const TSharedPtr<FRpcMethodResponse>& Response) {
+        const FString ResponseXml = Response->ParseToXmlString();
+        UE_LOG(LogXmlRpcServer, Verbose, TEXT("Response XML: '%s'"), *ResponseXml)
+
+        UE_LOG(LogXmlRpcServer, Log, TEXT("Finishing XmlRpc Request"))
+        OnComplete(FHttpServerResponse::Create(ResponseXml, "text/xml"));
+    });
+    return true;
+}
+
+bool FXmlRpcServer::ParseRequest(
+    const FHttpServerRequest& Request, FString& Name, TArray<TSharedPtr<FRpcValue>>& Arguments
+) {
     // Convert body to text
     TArray RequestBody{Request.Body, 1};
     RequestBody.Add(0);  // Add Null-Terminator
@@ -63,28 +92,22 @@ bool FXmlRpcServer::ProcessHttpRequest(const FHttpServerRequest& Request, const 
     const FXmlFile XmlFile{XmlText, EConstructMethod::ConstructFromBuffer};
     if (!XmlFile.IsValid()) {
         UE_LOG(LogXmlRpcServer, Error, TEXT("Could not parse XML from Request Body: %s"), *XmlFile.GetLastError())
-
-        OnComplete(FHttpServerResponse::Error(EHttpServerResponseCodes::BadRequest, TEXT(""), TEXT("Invalid XML")));
         return false;
     }
 
-    const FString ProcedureName = XmlFile.GetRootNode()->FindChildNode("methodName")->GetContent();
-    UE_LOG(LogXmlRpcServer, Log, TEXT("Trying to find remote procedure '%s'"), *ProcedureName)
-    
-    const FRemoteProcedure* Procedure = Procedures.Find(ProcedureName);
-    const TArray<TSharedPtr<FRpcValue>> Arguments = ParseArguments(XmlFile.GetRootNode()->FindChildNode("params"));
-    TFuture<TSharedPtr<FRpcMethodResponse>> Result = ExecuteProcedure(Procedure, Arguments);
+    // Get Name
+    Name = XmlFile.GetRootNode()->FindChildNode("methodName")->GetContent();
 
-    // Finish the Request when the future is fulfilled
-    Result.Next([OnComplete](const TSharedPtr<FRpcMethodResponse>& Response) {
-        const FString ResponseXml = Response->ParseToXmlString();
-        UE_LOG(LogXmlRpcServer, Verbose, TEXT("Response XML: '%s'"), *ResponseXml)
+    // Get Arguments
+    const FXmlNode* Params = XmlFile.GetRootNode()->FindChildNode("params");
+    for (const FXmlNode* Param : Params->GetChildrenNodes()) {
+        const FXmlNode* Value = Param->GetFirstChildNode();
+        Arguments.Push(FRpcValue::FromXml(Value));
+    }
 
-        UE_LOG(LogXmlRpcServer, Log, TEXT("Finishing XmlRpc Request"))
-        OnComplete(FHttpServerResponse::Create(ResponseXml, "text/xml")); 
-    });
     return true;
 }
+
 
 TFuture<TSharedPtr<FRpcMethodResponse>> FXmlRpcServer::ExecuteProcedure(
     const FRemoteProcedure* Procedure, const TArray<TSharedPtr<FRpcValue>>& Arguments
@@ -97,21 +120,5 @@ TFuture<TSharedPtr<FRpcMethodResponse>> FXmlRpcServer::ExecuteProcedure(
     }
 
     // Execute Procedure in ThreadPool
-    return Async(EAsyncExecution::ThreadPool, [Procedure, Arguments]() {
-        return (*Procedure)(Arguments);
-    });
-}
-
-TArray<TSharedPtr<FRpcValue>> FXmlRpcServer::ParseArguments(const FXmlNode* Params) {
-    if (!Params) {
-        return {};
-    }
-
-    TArray<TSharedPtr<FRpcValue>> Arguments;
-    for (const FXmlNode* Param : Params->GetChildrenNodes()) {
-        const FXmlNode* Value = Param->GetFirstChildNode();
-        Arguments.Push(FRpcValue::FromXml(Value));
-    }
-
-    return Arguments;
+    return Async(EAsyncExecution::ThreadPool, [Procedure, Arguments]() { return (*Procedure)(Arguments); });
 }
