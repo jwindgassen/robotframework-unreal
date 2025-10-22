@@ -36,6 +36,19 @@ void FRobotIntegrationModule::StartupModule() {
             return MakeShared<FRpcMethodResponse>(Result);
         }
     );
+
+    Server.RegisterProcedure(
+        "stop_remote_server",
+        [](const TArray<TSharedPtr<FRpcValue>>&) {
+            // We first need to finish the XML-RPC Request, so we queue the exit after a 0.5s delay
+            Async(EAsyncExecution::ThreadPool, []() {
+                FPlatformProcess::Sleep(0.5f);
+                FPlatformMisc::RequestExit(false);
+            });
+            
+            return MakeShared<FRpcMethodResponse>(MakeShared<FRpcValue>(true));
+        }
+    );
 }
 
 void FRobotIntegrationModule::ShutdownModule() {
