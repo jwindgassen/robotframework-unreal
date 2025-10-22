@@ -1,3 +1,3 @@
 ﻿#pragma once
 
-DECLARE_LOG_CATEGORY_EXTERN(LogRobotKeywords, Log, Log)
+ROBOTKEYWORDS_API DECLARE_LOG_CATEGORY_EXTERN(LogRobotKeywords, Log, Log)

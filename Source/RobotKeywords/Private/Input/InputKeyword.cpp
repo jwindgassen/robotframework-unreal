@@ -4,7 +4,6 @@
 #include "IAutomationDriver.h"
 #include "IDriverElement.h"
 #include "LocateBy.h"
-#include "RobotKeywords.h"
 
 
 FKeywordResponse UInputKeyword::Execute() {
@@ -14,10 +13,8 @@ FKeywordResponse UInputKeyword::Execute() {
 
     // Locate the element
     const TSharedRef<IDriverElement> Element = Driver->FindElement(ElementLocator);
-
     if (!Element->Exists()) {
-        UE_LOG(LogRobotKeywords, Error, TEXT("Could not locate Element '%s'"), *Locator)
-        return Error("Could not locate Element");
+        return LogErrorAndReturn(TEXT("Could not locate Element '%s'"), *Locator);
     }
 
     // Perform an action on the element

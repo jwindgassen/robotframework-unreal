@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "RobotKeywords.h"
 #include "RpcValue.h"
 #include "UObject/Object.h"
 #include <variant>
@@ -152,6 +153,8 @@ protected:
     template<typename FmtType, typename... Types>
     void Log(const FString& Level, const FmtType& Fmt, Types... Args) {
         const FString Message = FString::Printf(Fmt, Forward<Types>(Args)...);
+        
+        UE_LOG(LogRobotKeywords, Log, TEXT("Keyword Log: *%s* %s"), *Level, *Message);
         OutputBuilder.Appendf(TEXT("*%s* %s\n"), *Level, *Message);
     }
 
