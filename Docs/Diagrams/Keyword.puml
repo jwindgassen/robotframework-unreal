@@ -1,0 +1,52 @@
+﻿@startuml
+'https://plantuml.com/class-diagram
+
+!theme sunlust
+skinparam BackgroundColor transparent
+skinparam WrapWidth 0
+
+title "Keyword API"
+
+abstract class Keyword {
+    + {abstract} Execute(): Response
+    
+    + {static} GetKeywordInformation(keywordClass)
+    + {static} Run(keywordClass, arguments)
+    
+    # LogWarning(format, ...args)
+    # LogInfo(format, ...args)
+    # LogDebug(format, ...args)
+    
+    # Success(value): Response
+    # Error(message): Response
+    # LogErrorAndReturn(message): Response
+}
+
+class LevelHasActorOfClassKeyword {
+    + ClassName: String
+    
+    + Execute(): Response
+}
+
+Keyword <|-- LevelHasActorOfClassKeyword
+
+abstract class InputKeyword {
+    + Locator: String
+    
+    + Execute() : Response
+    + GetElementLocator(): IElementLocator
+    + {abstract} PerformAction(element: IDriverElement): Response
+    
+    # CreateDriver(): IAutomationDriver
+    # CleanupDriver()
+}
+
+Keyword <|-- InputKeyword
+
+class ClickElementKeyword {
+    + PerformAction(): Response
+}
+
+InputKeyword <|-- ClickElementKeyword
+
+@enduml

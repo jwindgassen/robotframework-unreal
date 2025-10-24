@@ -133,6 +133,8 @@ When an RPC for this Keyword is received, the Keyword will be instantiated and a
 automatically parsed into the corresponding field of the instance. For more information about the `UKeyword` lifetime,
 required overriding members, and supported types for a `KeywordArgument`, take a look at its docstring.
 
+<img alt="Keyword API" src="Docs/Diagrams/Keyword.png" height=400 />
+
 While the *RobotIntegration* plugin provides builtin Keywords, you can create your own Keywords inside your application
 by subclassing the `UKeyword` class yourself. Any custom Keywords will also be discovered and registered when the
 *RemoteLibrary* is initiated.
@@ -160,7 +162,7 @@ By::Path("#Piano//#KeyB/<STextBlock>")
 By::Path("#Suite//Form//Rows//#A1//<SEditableText>")
 ```
 
-![KeywordExecution.png](Docs/Diagrams/KeywordExecution.png)
+<img alt="Keyword Execution" src="Docs/Diagrams/KeywordExecution.png" height=600></img>
 
 Many of the builtin Keyword of the `RobotIntegration` plugin take a string for locating the element as a first argument.
 
