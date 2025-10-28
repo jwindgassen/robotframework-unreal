@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<Import Project="RobotIntegration.Automation.csproj.props" Condition="Exists('RobotIntegration.Automation.csproj.props')"/>
+    <Import Project="$(EngineDir)\Source\Programs\Shared\UnrealEngine.csproj.props" />
+	
+    <PropertyGroup>
+		<Configuration>Debug;Development</Configuration>
+		<OutputType>Library</OutputType>
+		<RootNamespace>RobotIntegration.Automation</RootNamespace>
+		<AssemblyName>RobotIntegration.Automation</AssemblyName>
+		<OutputPath>$(EngineDir)\Binaries\DotNET\AutomationScripts\</OutputPath>
+        <TargetFramework>net8.0</TargetFramework>
+		<Optimize>false</Optimize>
+        <Nullable>enable</Nullable>
+		<ErrorReport>prompt</ErrorReport>
+		<WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+	
+	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+		<DebugSymbols>true</DebugSymbols>
+		<DebugType>full</DebugType>
+		<DefineConstants>DEBUG;TRACE</DefineConstants>
+	</PropertyGroup>
+	
+	<PropertyGroup Condition=" '$(Configuration)' == 'Development' ">
+		<DebugType>pdbonly</DebugType>
+		<DefineConstants>TRACE</DefineConstants>
+	</PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="$(EngineDir)\Source\Programs\AutomationTool\AutomationUtils\AutomationUtils.Automation.csproj" />
+    </ItemGroup>
+	
+</Project>
