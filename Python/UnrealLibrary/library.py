@@ -2,6 +2,8 @@ import asyncio
 import socket
 import typing
 from pathlib import Path
+import os
+import platform
 
 from robot.api import logger as log
 from robot.api.deco import library, keyword
@@ -48,6 +50,11 @@ class UnrealLibrary:
     def application_log_path(self) -> Path:
         base = Path(BuiltIn().get_variable_value("$OUTPUT_DIR", "."))
         return base / "application.log"
+        
+    @property
+    def uat_path(self) -> Path:
+        ending = "bat" if platform.system() == "Windows" else "sh"
+        return self.engine_path / "Engine" / "Build" / "BatchFiles" / f"RunUAT.{ending}"
 
     @keyword("Build Unreal Application")
     async def build_application(self, configuration: str = "Development"):
@@ -137,9 +144,6 @@ class UnrealLibrary:
         :param wait: Should we wait until the UAT Command has been finished.
         :returns: If wait is true, returns the return code, otherwise the subprocess instance.
         """
-        # ToDo: Other Platforms
-        uat_path = self.engine_path / "Engine" / "Build" / "BatchFiles" / "RunUAT.bat"
-
         if isinstance(redirect_stdout, (str, Path)):
             stdout = open(redirect_stdout, "wb")
         else:
@@ -147,7 +151,7 @@ class UnrealLibrary:
 
         # Create the subprocess
         proc = await asyncio.create_subprocess_exec(
-            uat_path,
+            self.uat_path,
             command,
             *args,
             stdout=stdout,
